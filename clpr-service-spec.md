@@ -61,11 +61,17 @@ message ClprLedgerConfiguration {
   // state external to the configuration (e.g., Ethereum sync committees), this
   // field is empty and the verifier derives the trust anchor from a separate state
   // proof embedded in the same proof_bytes.
-  bytes initial_trust_anchor = 6;
+  bytes initial_trust_anchor = 7;
 
   // Opaque identifier for initial_trust_anchor. MUST be non-empty iff
   // initial_trust_anchor is non-empty. Format is verifier-defined.
-  bytes initial_trust_anchor_id = 7;
+  bytes initial_trust_anchor_id = 8;
+
+  // Field 6 previously carried a repeated endpoint list, superseded by the
+  // service-level ClprEndpointManifest (§2.4). Reserved rather than reused so
+  // that already-deployed encoders and decoders cannot silently misread it.
+  reserved 6;
+  reserved "endpoints";
 }
 
 // Consensus timestamp. Defined here rather than importing google.protobuf.Timestamp
@@ -103,7 +109,7 @@ message ClprThrottles {
   // When the queue is full, new messages are rejected until the peer catches up.
   uint32 max_queue_depth = 4;
 
-  // Maximum total size of a serialized ClprSyncPayload (the gRPC message).
+  // Maximum total size of a serialized ClprStreamingSyncPayload (the gRPC message).
   // Endpoints MUST reject messages exceeding this limit.
   //
   // Sizing constraint: this value MUST be greater than max_message_payload_bytes plus the
@@ -135,25 +141,31 @@ message ClprThrottles {
 message ClprEndpoint {
   // Network address and port. Optional; omit for private networks that
   // only initiate outbound syncs.
-  ServiceEndpoint service_endpoint = 1;
+  ClprServiceEndpoint service_endpoint = 1;
 
   // DER-encoded self-signed ECDSA P-384 X.509 CA certificate: the root of
   // trust for mTLS between endpoints. Content is minimized — minimal
   // issuer/subject DN (a single RDN such as CN=CLPR; some implementations
   // reject an entirely empty DN), minimal serial, basicConstraints CA:TRUE,
   // keyUsage
-  // keyCertSign+cRLSign, no path-building or revocation extensions. MUST NOT
-  // exceed 512 bytes; the CLPR Service MUST reject admission of a
-  // ClprEndpoint whose tls_certificate exceeds this size. Not presented on
-  // the wire: each endpoint holds a leaf certificate signed by this CA's key
-  // and presents that leaf at the mTLS handshake.
+  // keyCertSign+cRLSign, no path-building or revocation extensions. SHOULD NOT
+  // exceed 512 bytes; a CLPR Service MAY reject admission of a ClprEndpoint
+  // whose tls_certificate exceeds this size. Not presented on the wire: each
+  // endpoint holds a leaf certificate signed by this CA's key and presents
+  // that leaf at the mTLS handshake.
   bytes tls_certificate = 2;
 
+  // Opaque, ledger-specific identity of the account operating this endpoint.
+  // Format is defined by the publishing ledger and is not interpreted by
+  // peers. Optional; may be empty where the platform has no such concept.
+  bytes account_id = 3;
 }
 
 // Network address for an endpoint.
-message ServiceEndpoint {
-  // IPv4 or IPv6 numeric address (no DNS hostnames).
+message ClprServiceEndpoint {
+  // IPv4 or IPv6 numeric address, or a DNS hostname. Implementations that
+  // publish a hostname MUST accept that peers may fail to resolve it; a peer
+  // that cannot resolve an endpoint treats it as unreachable and moves on.
   string ip_address = 1;
   uint32 port = 2;
 }
@@ -303,14 +315,14 @@ message ClprMessageReply {
 ## 1.5 Sync Protocol
 
 The sync protocol defines the wire format for endpoint-to-endpoint communication. A sync cycle is a bidirectional
-stream of `ClprSyncPayload` messages scoped to a single Channel; each side requests a bundle describing its
+stream of `ClprStreamingSyncPayload` messages scoped to a single Channel; each side requests a bundle describing its
 current queue state and returns a bundle carrying opaque proof bytes that the receiving ledger's verifier contract
 will interpret.
 
 ```protobuf
 // One message in the bidirectional sync stream, scoped to a single
 // Channel (see ClprEndpointService.sync).
-message ClprSyncPayload {
+message ClprStreamingSyncPayload {
   // Channel ID identifying the Channel this message belongs to.
   // MUST be exactly 32 bytes.
   bytes channel_id = 1;
@@ -318,11 +330,11 @@ message ClprSyncPayload {
   // A request describing the requestor's own current Channel state, used by
   // the responder to shape a minimal, progress-making bundle. Absent when the
   // requestor has no further request this cycle.
-  BundleRequest bundle_request = 2;
+  ClprBundleRequest bundle_request = 2;
 
-  // A response to a previously received BundleRequest. Absent when this
+  // A response to a previously received ClprBundleRequest. Absent when this
   // message carries no bundle this cycle.
-  BundleResponse bundle_response = 3;
+  ClprBundleResponse bundle_response = 3;
 }
 
 // Unproven request describing the requestor's own current Channel
@@ -332,12 +344,12 @@ message ClprSyncPayload {
 // trust-anchor update (§4.2) remain the sole authorities on state and
 // run when the requestor submits the returned bundle. Each field lets
 // the responder build against the requestor's current state (§2.1.2).
-message BundleRequest {
-  // The requestor's claimed current ChannelSyncData.received_message_id. 
+message ClprBundleRequest {
+  // The requestor's claimed current ClprQueueMetadata.received_message_id. 
   // This value +1 determines where to start the message sequence in the response bundle.
   uint64 current_received_message_id = 1;
 
-  // The requestor's current ChannelSyncData.status.
+  // The requestor's current ClprQueueMetadata.status.
   ClprChannelStatus current_status = 2;
 
   // The requestor's current Channel.trust_anchor_id.
@@ -348,7 +360,7 @@ message BundleRequest {
 }
 
 // A bundle for the peer's verifier contract.
-message BundleResponse {
+message ClprBundleResponse {
   // Opaque payload for the receiving ledger's verifier contract. Contains
   // the state proof, the message data it attests to, and whatever else
   // the verifier needs to extract and verify sync data and messages
@@ -369,23 +381,43 @@ enum ClprChannelStatus {
 // Sync data extracted and verified by a verifier contract from bundle_payload.
 // The verifier contract returns this as part of verifyBundle().
 //
-// Each side of a Channel maintains exactly one ChannelSyncData instance,
+// Each side of a Channel maintains exactly one ClprQueueMetadata instance,
 // describing its own queue state, proven and exchanged on every bundle.
 //
 // Field usage:
-//   - received_message_id:  provided as an ACK indicating which messages have been received
-//   - status:               provided to drive Channel status transitions
-//   - next_message_id:      provided to indicate the upperbound on ids of sent messages
-message ChannelSyncData {
+//   - next_message_id:            upper bound on ids of sent messages
+//   - sent_running_hash:          running hash over this side's outbound queue
+//   - received_message_id:        an ACK indicating which messages have been received
+//   - received_running_hash:      running hash over the messages this side has received
+//   - status:                     drives Channel status transitions
+//   - trust_anchor_id:            the trust anchor this side currently holds
+//   - endpoint_manifest_version:  the manifest version this side currently holds
+//
+// The running hashes, trust_anchor_id and endpoint_manifest_version allow a
+// responder to shape a partial bundle against the requestor's exact position
+// without replaying the whole queue (see ADR 2026-07-17).
+message ClprQueueMetadata {
+  // The next message ID to be assigned on this ledger's outbound queue.
+  uint64 next_message_id = 1;
+
+  // Running hash over the messages this side has sent.
+  bytes sent_running_hash = 2;
+
   // Highest ID of the peer's messages the local end of the channel
   // has received and processed.
-  uint64 received_message_id = 1;
+  uint64 received_message_id = 3;
+
+  // Running hash over the messages this side has received.
+  bytes received_running_hash = 4;
 
   // The status of the local end of the channel.
-  ClprChannelStatus status = 2;
+  ClprChannelStatus status = 5;
 
-  // The next message ID to be assigned on this ledger's outbound queue.
-  uint64 next_message_id = 3;
+  // Opaque identifier of the trust anchor this side currently holds.
+  bytes trust_anchor_id = 6;
+
+  // Version of the ClprEndpointManifest this side currently holds.
+  uint64 endpoint_manifest_version = 7;
 }
 ```
 
@@ -396,12 +428,12 @@ CLPR Service API. Implementations MUST configure gRPC max message sizes to accom
 
 ```protobuf
 service ClprEndpointService {
-  // Bidirectional sync over a stream of ClprSyncPayload messages scoped to a
-  // single Channel: each side sends a BundleRequest describing its current
-  // queue state and returns a BundleResponse shaped by the peer's request. One
+  // Bidirectional sync over a stream of ClprStreamingSyncPayload messages scoped to a
+  // single Channel: each side sends a ClprBundleRequest describing its current
+  // queue state and returns a ClprBundleResponse shaped by the peer's request. One
   // stream is one sync cycle; a message with both fields absent closes it. The
   // underlying connection and its TLS session MAY persist across cycles.
-  rpc sync(stream ClprSyncPayload) returns (stream ClprSyncPayload);
+  rpc sync(stream ClprStreamingSyncPayload) returns (stream ClprStreamingSyncPayload);
 }
 ```
 
@@ -439,7 +471,7 @@ See §5.1 for the full registration lifecycle.
 
 For the purposes of this specification, the Channel data is presented as if it is stored all in one 
 data structure.  Different chains may choose to break up the storage of the data into pieces to enable 
-efficient CLPR state proofs of ChannelSyncData.  
+efficient CLPR state proofs of ClprQueueMetadata.  
 
 ```
 Channel {
@@ -484,13 +516,13 @@ Channel {
 ```
 
 `status`, `received_message_id`, and `next_message_id` are not Channel's own fields — each side's current
-values for these are held solely in its own `ChannelSyncData` instance, state-proven and exchanged
+values for these are held solely in its own `ClprQueueMetadata` instance, state-proven and exchanged
 on every bundle. Wherever this document refers to `Channel.status`, `Channel.received_message_id`, or 
-`Channel.next_message_id`, read this side's own `ChannelSyncData` instance instead.
+`Channel.next_message_id`, read this side's own `ClprQueueMetadata` instance instead.
 
 **Initial values.** When a Channel is created, `acked_message_id` = 0, both running hashes are 32 bytes
 of zeros, and `endpoint_manifest` is empty. The initial `trust_anchor_id` is also empty or a sentinel
-value of all zeros. For this side's own `ChannelSyncData`: `received_message_id` = 0,
+value of all zeros. For this side's own `ClprQueueMetadata`: `received_message_id` = 0,
 `next_message_id` = 1. No outbound Data Messages exist, so no responses are expected. The first Data
 Message ever enqueued will have ID 1, and the first Response Message received from the peer MUST
 reference that ID.
@@ -543,7 +575,7 @@ so arriving Data Messages are dispatched normally and generate Response Messages
 added to the outbound queue and delivered before the Channel reaches `CLOSED`; the outbound queue may be
 temporarily non-empty during this final drain. From the application's perspective, DRAINED means all Data
 Messages sent by this side have been delivered; the side is now waiting only for responses to those Data
-Messages to return. The `ChannelSyncData.status` carries `DRAINED` so the peer observes it during sync.
+Messages to return. The `ClprQueueMetadata.status` carries `DRAINED` so the peer observes it during sync.
 Transitions to `CLOSED` when an inbound bundle carries `sync_data.status ∈ {DRAINED, CLOSED}` AND
 `acked_message_id ≥ next_message_id − 1` (§4.2 Step 5b), ensuring all Response Messages generated for the
 peer's final in-flight Data Messages have also been delivered before the Channel closes. If the remote
@@ -559,11 +591,11 @@ bundles satisfying none of them (§4.2 Step 1a). CLPR Endpoints MUST NOT submit 
 
 | # | Condition | Holds when… |
 |---|-----------|-------------|
-| 1 | **New messages** | The bundle's anchor message ID is greater than this side's own stored `ChannelSyncData.received_message_id` |
+| 1 | **New messages** | The bundle's anchor message ID is greater than this side's own stored `ClprQueueMetadata.received_message_id` |
 | 2 | **Trust anchor advancement** | The verifier returns `new_trust_anchor_id ≠ Channel.trust_anchor_id` |
 | 3 | **Endpoint manifest advancement** | `new_endpoint_manifest` is non-empty and `new_endpoint_manifest.version > Channel.endpoint_manifest.version` |
 | 4 | **Acknowledgement progress** | `sync_data.received_message_id > Channel.acked_message_id` |
-| 5 | **Channel state transition** | At least one of: **(a)** `sync_data.status ∈ {CLOSING, DRAINED, CLOSED}` with this side's own `ChannelSyncData.status ∈ {ACTIVE, PAUSED}` — triggers `CLOSING` (§4.2 Step 5a); **(b)** this side's own `ChannelSyncData.status = CLOSING` and no Data Messages with ID > `acked_message_id` remain in the outbound queue — triggers `DRAINED` (§4.2 Step 5b); **(c)** this side's own `ChannelSyncData.status = DRAINED`, `sync_data.status ∈ {DRAINED, CLOSED}`, and the acknowledgement point covers every response generated for the peer's remaining Data Messages — triggers `CLOSED` (§4.2 Step 5b) |
+| 5 | **Channel state transition** | At least one of: **(a)** `sync_data.status ∈ {CLOSING, DRAINED, CLOSED}` with this side's own `ClprQueueMetadata.status ∈ {ACTIVE, PAUSED}` — triggers `CLOSING` (§4.2 Step 5a); **(b)** this side's own `ClprQueueMetadata.status = CLOSING` and no Data Messages with ID > `acked_message_id` remain in the outbound queue — triggers `DRAINED` (§4.2 Step 5b); **(c)** this side's own `ClprQueueMetadata.status = DRAINED`, `sync_data.status ∈ {DRAINED, CLOSED}`, and the acknowledgement point covers every response generated for the peer's remaining Data Messages — triggers `CLOSED` (§4.2 Step 5b) |
 
 **Endpoint pre-check.** Before building a bundle for submission, the endpoint evaluates these conditions
 against its cached view of the destination Channel. For Condition 1, it uses the destination's
@@ -816,7 +848,7 @@ interface IClprVerifier {
   //                                         it from ctx. Never mutated; the same value is
   //                                         passed on every call for a given Channel.
   //
-  //   ChannelSyncData     — verified queue state: the sender's received_message_id,
+  //   ClprQueueMetadata     — verified queue state: the sender's received_message_id,
   //                          status, and next_message_id.
   //   ClprMessagePayload[]  — ordered message payloads proven by the bundle.
   //   anchor_message_id     : uint64 — ID of the last message in the sender's outbound
@@ -839,7 +871,7 @@ interface IClprVerifier {
   // MUST revert if verification fails.
   // SHOULD fail fast on obviously malformed inputs before expensive cryptographic operations.
   function verifyBundle(bytes bundle_payload, bytes trust_anchor, ChannelContext ctx)
-    returns (ChannelSyncData, ClprMessagePayload[],
+    returns (ClprQueueMetadata, ClprMessagePayload[],
              uint64 anchor_message_id, bytes anchor_running_hash,
              bytes new_trust_anchor, bytes new_trust_anchor_id,
              ClprEndpointManifest new_endpoint_manifest)
@@ -984,7 +1016,7 @@ interface IClprConnectorAuth {
 When the CLPR Service transitions a local Channel to `CLOSED`, the endpoint MUST submit one final
 **close-notification bundle** to the remote CLPR Service. This bundle is a normal bundle — same wire
 format as any other — constructed from the local ledger state at or after the `CLOSED` transition block.
-Its `ChannelSyncData` carries `status = CLOSED` along with the final `received_message_id`; the bundle's
+Its `ClprQueueMetadata` carries `status = CLOSED` along with the final `received_message_id`; the bundle's
 anchor message carries the final message ID and running hash.
 
 **Purpose.** Once a Channel reaches `CLOSED`, normal sync cycles end. The close-notification is the
@@ -1047,14 +1079,14 @@ for the running hash chain's security requirements. The hash algorithm can be up
 When a bundle is submitted to the CLPR Service (post-consensus):
 
 **Step 1 — Verifier call.** Pass `bundle_payload`, the Channel's current `trust_anchor`, and the Channel's stored `channel_context` to the Channel's verifier contract via `verifyBundle(bundle_payload, trust_anchor, channel_context)`. The verifier returns
-`(ChannelSyncData sync_data, ClprMessagePayload[] messages, uint64 anchor_message_id, bytes anchor_running_hash, bytes new_trust_anchor, bytes new_trust_anchor_id, ClprEndpointManifest new_endpoint_manifest)`.
+`(ClprQueueMetadata sync_data, ClprMessagePayload[] messages, uint64 anchor_message_id, bytes anchor_running_hash, bytes new_trust_anchor, bytes new_trust_anchor_id, ClprEndpointManifest new_endpoint_manifest)`.
 If the verifier reverts or returns an error, reject the entire bundle. The submitting account pays the transaction
 cost.
 
 **Step 1a — NoProgress check.** Reject the bundle with `NoProgress` if none of the five Bundle Progress
 Criteria (§2.1.2) holds. Concretely, reject if all of the following are true simultaneously:
 
-- `messages.length == 0`, or `anchor_message_id ≤` this side's own stored `ChannelSyncData.received_message_id` — no new messages
+- `messages.length == 0`, or `anchor_message_id ≤` this side's own stored `ClprQueueMetadata.received_message_id` — no new messages
 - `new_trust_anchor_id == Channel.trust_anchor_id` (or `new_trust_anchor` is empty) — trust anchor not advanced
 - `new_endpoint_manifest` is empty bytes, or non-empty but `new_endpoint_manifest.version ≤ Channel.endpoint_manifest.version` — manifest not advanced (Criterion 3)
 - `sync_data.received_message_id <= Channel.acked_message_id` — no acknowledgement progress
@@ -1092,25 +1124,25 @@ not necessarily through all messages the sender has ever enqueued.) If they do n
 bundle.
 
 **Step 5 — Acknowledgement update.** Update `acked_message_id` from the verifier-returned
-`ChannelSyncData.received_message_id`. Delete acknowledged Response Messages and Control Messages from the outbound
+`ClprQueueMetadata.received_message_id`. Delete acknowledged Response Messages and Control Messages from the outbound
 queue (neither generates a further response). Retain acknowledged Data Messages until their corresponding response
 arrives (see §4.5).
 
-**Step 5a — Queue status check.** If `ChannelSyncData.status` is `CLOSING`, `DRAINED`, or `CLOSED` and
-this side's own `ChannelSyncData.status` is `ACTIVE` or `PAUSED`, transition to `CLOSING`. Set the local `ChannelSyncData.status` to
+**Step 5a — Queue status check.** If `ClprQueueMetadata.status` is `CLOSING`, `DRAINED`, or `CLOSED` and
+this side's own `ClprQueueMetadata.status` is `ACTIVE` or `PAUSED`, transition to `CLOSING`. Set the local `ClprQueueMetadata.status` to
 `CLOSING` so the peer observes it on the next sync. The `CLOSED` case handles close-notification bundles
 (§3.4) arriving at a Channel that has not yet begun closing locally.
 
 **Step 5b — Drain check.** Two independent sub-checks, evaluated in order:
 
-1. If this side's own `ChannelSyncData.status` is `CLOSING` and no Data Messages with ID > `acked_message_id` remain in the outbound
+1. If this side's own `ClprQueueMetadata.status` is `CLOSING` and no Data Messages with ID > `acked_message_id` remain in the outbound
    queue (peer has acknowledged all Data Messages, using the `acked_message_id` already updated in Step 5),
    transition the Channel to `DRAINED`. Response Messages generated during CLOSING (for the peer's remaining
    Data Messages) are not required to be acknowledged for this transition — they may still be in flight and
    will drain through the DRAINED state. This condition may fire on the same bundle that triggered the CLOSING
    transition in Step 5a — a Channel with no unacknowledged Data Messages transitions directly through
    CLOSING to DRAINED in a single step.
-2. If this side's own `ChannelSyncData.status` is `DRAINED` (whether just transitioned in sub-check 1 or already `DRAINED` prior to
+2. If this side's own `ClprQueueMetadata.status` is `DRAINED` (whether just transitioned in sub-check 1 or already `DRAINED` prior to
    this bundle), `sync_data.status ∈ {DRAINED, CLOSED}`, AND `acked_message_id >= next_message_id - 1`
    (all Response Messages generated for the peer's final in-flight Data Messages have been acknowledged),
    transition the Channel to `CLOSED`.
@@ -1155,7 +1187,7 @@ When a message send is processed:
    and `message_data`.
 7. Compute `running_hash = SHA-256(sent_running_hash || serialized_payload)`.
 8. Store the message in the queue keyed by `(channel_id, next_message_id)`.
-9. Update Channel: `sent_running_hash = running_hash`. Update ChannelSyncData: `next_message_id += 1`.
+9. Update Channel: `sent_running_hash = running_hash`. Update ClprQueueMetadata: `next_message_id += 1`.
 
 ## 4.4 Message Lifecycle
 
@@ -1340,7 +1372,7 @@ The CLPR Service admin can:
 
 - **Close** a Channel — initiate graceful shutdown. Valid from `PENDING`
   (immediate deletion — no drain needed), `ACTIVE`, `PAUSED`, and `DRAINED`. From `ACTIVE` or `PAUSED`:
-  transitions to `CLOSING` (`ChannelSyncData.status` reflects this and is propagated to the peer on next
+  transitions to `CLOSING` (`ClprQueueMetadata.status` reflects this and is propagated to the peer on next
   sync). All inbound Data Messages from the peer continue to be dispatched normally and generate Response
   Messages until both sides have fully drained. The Channel transitions to `CLOSED` when an inbound bundle
   carries `sync_data.status ∈ {DRAINED, CLOSED}` AND the local queue is empty (§4.2 Step 5b).
@@ -1432,7 +1464,7 @@ completeChannel(
 // Close a Channel (graceful drain, then terminal).
 // Authority: CLPR Service admin only.
 // From PENDING: deletes the Channel immediately (no drain phase needed).
-// From ACTIVE or PAUSED: transitions to CLOSING. ChannelSyncData.status reflects
+// From ACTIVE or PAUSED: transitions to CLOSING. ClprQueueMetadata.status reflects
 //   this and is propagated to the peer on next sync. All inbound Data Messages
 //   continue to be dispatched normally. Transitions to DRAINED when
 //   acked_message_id ≥ next_message_id − 1 (§4.2 Step 5b); if the queue is already
@@ -1561,12 +1593,12 @@ sendMessage(
 // Submit a bundle received from a peer endpoint for on-chain processing.
 // Authority: any caller.
 // The channel_id identifies which Channel to process against.
-// The bundle_payload is the BundleResponse.bundle_payload received during
+// The bundle_payload is the ClprBundleResponse.bundle_payload received during
 // sync. Call the verifier and process the bundle contents (§4.2).
 submitBundle(
   [auth] caller,
   channel_id: bytes(32),
-  bundle_payload: bytes          // BundleResponse.bundle_payload
+  bundle_payload: bytes          // ClprBundleResponse.bundle_payload
 ) → success | error
 ```
 
@@ -1688,7 +1720,7 @@ reports are exchanged.
 | `maxMessagePayloadBytes` | TBD         | Per-Ledger (per-Channel) | Maximum payload size for a single message. Enforced by source (enqueue) and destination (bundle).                                                                                                                                                                      |
 | `maxMessagesPerBundle`   | TBD         | Per-Ledger (per-Channel) | Maximum messages a single bundle may contain. Platform specs MUST set this to ensure bundles fit within the platform's transaction size and execution budget limits.                                                                                                   |
 | `maxGasPerMessage`       | TBD         | Per-Ledger (per-Channel) | Maximum gas (or ops budget) allocated to processing a single message.                                                                                                                                                                                                  |
-| `maxSyncBytes`           | TBD         | Per-Ledger (per-Channel) | Maximum total size of a serialized `ClprSyncPayload`. Endpoints MUST reject messages exceeding this limit.                                                                                                                                                             |
+| `maxSyncBytes`           | TBD         | Per-Ledger (per-Channel) | Maximum total size of a serialized `ClprStreamingSyncPayload`. Endpoints MUST reject messages exceeding this limit.                                                                                                                                                             |
 
 **Scope note.** Parameters marked "Per-Ledger (per-Channel)" are published in the ledger-wide configuration
 (`ClprThrottles`) and advertised to all peers. Each Channel independently enforces them against incoming data.
