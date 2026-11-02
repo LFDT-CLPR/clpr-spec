@@ -7,7 +7,7 @@ Each subdirectory here documents the verifier specification for one chain. A ver
 The normative interface is in [the CLPR service specification](../clpr-service-spec.md#31-verifier-contract-interface).
 `verifyConfig` establishes the channel context and authority. `verifyBundle` returns
 proven channel data and messages, or an authority-only update marked by all-zero
-channel sync data.
+channel sync data and a successor authority.
 
 Verification is stateless. Only the service applies returned authority and channel
 changes. See [HieroProof V1](hiero/proof_envelope.md) for the opt-in key-provenance

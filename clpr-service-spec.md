@@ -817,10 +817,10 @@ interface IClprVerifier {
   //                                         passed on every call for a given Channel.
   //
   //   ChannelSyncData     — verified queue state: the sender's received_message_id,
-  //                          status, and next_message_id. All-zero denotes an authority-only
-  //                          update (next_message_id starts at 1, so no channel state is all-zero):
-  //                          messages and manifest are empty and a different non-empty
-  //                          successor and ID are required.
+  //                          status, and next_message_id. All-zero, together with a non-empty
+  //                          new_trust_anchor, denotes an authority-only update (next_message_id
+  //                          starts at 1, so no channel state is all-zero): messages and manifest
+  //                          are empty and a different successor with a non-empty ID is required.
   //   ClprMessagePayload[]  — ordered message payloads proven by the bundle.
   //   anchor_message_id     : uint64 — ID of the last message in the sender's outbound
   //                          queue included in this bundle. Chain-specific absent/sentinel
@@ -1065,10 +1065,11 @@ When a bundle is submitted to the CLPR Service (post-consensus):
 If the verifier reverts or returns an error, reject the entire bundle. The submitting account pays the transaction
 cost.
 
-**Step 1 (authority-only result).** When `sync_data.next_message_id` is 0, the service MUST require
-all sync-data and message-anchor fields to be zero/absent, no messages, an empty manifest (including
-its identity and endpoints), and non-empty `new_trust_anchor` and `new_trust_anchor_id`. The new
-anchor bytes MUST differ from the stored anchor; an ID change alone is insufficient. Otherwise reject.
+**Step 1 (authority-only result).** When `sync_data.next_message_id` is 0 and `new_trust_anchor` is
+non-empty, the service MUST require all sync-data and message-anchor fields to be zero/absent, no
+messages, an empty manifest (including its identity and endpoints), and a non-empty
+`new_trust_anchor_id`. The new anchor bytes MUST differ from the stored anchor; an ID change alone is
+insufficient. Otherwise reject.
 After the usual channel-existence/status, service-enabled, and bundle-size checks, atomically persist
 only `Channel.trust_anchor` and `Channel.trust_anchor_id`, then return successfully. Do not run Steps
 1a onward, synthesize queue metadata, acknowledge/delete messages, update manifests/configuration,
@@ -1077,10 +1078,11 @@ remains unchanged. This authority change is sufficient progress regardless of ex
 A verifier failure or invalid result leaves the original authority unchanged.
 
 `next_message_id` is initialized to 1 and Step 3 rejects a value below `received_message_id + 1`, so
-no accepted state-bearing result has all-zero `sync_data`. All-zero `sync_data` therefore marks an
-authority-only result without any change to the verifier interface, the stored channel layout, or the
-opaque `bundle_payload` field. A result with `sync_data.next_message_id` of 0 that does not meet the
-requirements above is rejected.
+no accepted state-bearing result has all-zero `sync_data`. All-zero `sync_data` with a successor
+authority therefore marks an authority-only result without any change to the verifier interface, the
+stored channel layout, or the opaque `bundle_payload` field. A result with `sync_data.next_message_id`
+of 0 and a successor authority that does not meet the requirements above is rejected; one without a
+successor authority is an ordinary state result, which Step 1a and Step 3 reject.
 
 **Step 1a — NoProgress check.** Reject the bundle with `NoProgress` if none of the five Bundle Progress
 Criteria (§2.1.2) holds. Concretely, reject if all of the following are true simultaneously:

@@ -34,8 +34,8 @@ than in the ledger-neutral CLPR transport or in the consensus node's state queue
 This repo owns the protocol definition; the proposed proto is ready for a separate
 HAPI publication. The existing WRAPS/ledger-ID verifier remains a separate profile.
 
-Authority-only results are marked by all-zero channel sync data, not by an extra
-verifier return. `next_message_id` is initialized to 1 and the replay defense
+Authority-only results are marked by all-zero channel sync data together with a
+successor authority, not by an extra verifier return. `next_message_id` is initialized to 1 and the replay defense
 rejects a value below `received_message_id + 1`, so no accepted state-bearing
 result is all-zero. The service writes only the anchor and ID, returning before
 channel processing. A state-bearing empty-message bundle still follows the normal

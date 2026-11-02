@@ -163,7 +163,7 @@ a suitable current key, or omit the optional manifest proof, catch up after
 channel creation, and then prove the manifest in a state-proof bundle.
 
 The shared verifier interface is unchanged: an authority-only result is marked by
-all-zero channel sync data. This does not migrate existing
+all-zero channel sync data and a successor authority. This does not migrate existing
 channels from ledger-ID anchors to VK anchors, or change the native CLPR precompile
 ABI automatically.
 
