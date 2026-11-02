@@ -17,9 +17,9 @@ bootstrap and mandatory rejection rules are defined in [proof_envelope.md](proof
 The companion `clpr-smart-contracts` implementation retains the legacy verifier;
 it does not replace native precompiles or silently migrate existing channels.
 
-`verifyBundle` returns the explicit `has_channel_state` flag. State proofs return
-true; provenance-only updates return false with an empty message list and only a
-new anchor and identifier. The service, not the verifier, persists this result.
+`verifyBundle` returns proven channel data for state proofs. Provenance-only updates
+return all-zero sync data with an empty message list and only a new anchor and
+identifier. The service, not the verifier, persists this result.
 It skips channel processing entirely for a validated authority-only update.
 
 State proofs authenticate the channel and messages to a signed block root. The

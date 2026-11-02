@@ -54,8 +54,8 @@ strictly-greater-than-one-third authorization of the exact successor bytes is th
 basis for trusting those properties. The initially pinned key requires the same
 properties to be established out of band.
 
-Success returns `has_channel_state = false`, no messages, no manifest, no channel
-sync data or message anchor, the final raw VK as `new_trust_anchor`, and its 32-byte
+Success returns all-zero channel sync data, no messages, no manifest, no message
+anchor, the final raw VK as `new_trust_anchor`, and its 32-byte
 Keccak-256 digest as `new_trust_anchor_id`. The CLPR service commits only these two
 authority fields, atomically. The identifier is a cache/routing hint; it is not an
 epoch counter, signature target, or independent source of authority.
@@ -137,8 +137,8 @@ aggregate bytes. All required paths must converge to the authenticated block roo
 the proven channel identity must match the channel context, and carried endpoint
 manifests must match its remote service address.
 
-Success returns `has_channel_state = true` and ordinary proven channel data and
-messages. It returns no trust-anchor change. A state-proof bundle with no messages
+Success returns ordinary proven channel data, whose `next_message_id` is at least 1,
+and messages. It returns no trust-anchor change. A state-proof bundle with no messages
 still requires actual channel-state evidence; it is distinct from provenance-only
 absence. Normal CLPR replay, running-hash, ack, progress and status rules apply.
 
@@ -162,10 +162,8 @@ unusable at setup under an older pin. Either configure with a verifier pinned to
 a suitable current key, or omit the optional manifest proof, catch up after
 channel creation, and then prove the manifest in a state-proof bundle.
 
-The shared verifier interface adds an explicit final `has_channel_state` boolean.
-All verifiers used by that service must implement it; older return tuples cannot
-be silently treated as state-bearing or authority-only. Deployment of the revised
-service and matching verifiers must be coordinated. This does not migrate existing
+The shared verifier interface is unchanged: an authority-only result is marked by
+all-zero channel sync data. This does not migrate existing
 channels from ledger-ID anchors to VK anchors, or change the native CLPR precompile
 ABI automatically.
 
@@ -181,5 +179,5 @@ ABI automatically.
 - Authority-only updates on ACTIVE, PAUSED, CLOSING and DRAINED channels preserve
   all queue/ack counters and hashes, messages, configuration, manifests, status,
   and application effects. They do not auto-resume or close a channel.
-- A false presence flag with nonempty channel data/messages/manifest, an empty
-  successor, empty successor ID, or unchanged authority is rejected by the service.
+- A result with `next_message_id` of zero and nonempty channel data/messages/manifest,
+  an empty successor, empty successor ID, or unchanged authority is rejected by the service.

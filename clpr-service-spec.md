@@ -817,7 +817,10 @@ interface IClprVerifier {
   //                                         passed on every call for a given Channel.
   //
   //   ChannelSyncData     — verified queue state: the sender's received_message_id,
-  //                          status, and next_message_id.
+  //                          status, and next_message_id. All-zero denotes an authority-only
+  //                          update (next_message_id starts at 1, so no channel state is all-zero):
+  //                          messages and manifest are empty and a different non-empty
+  //                          successor and ID are required.
   //   ClprMessagePayload[]  — ordered message payloads proven by the bundle.
   //   anchor_message_id     : uint64 — ID of the last message in the sender's outbound
   //                          queue included in this bundle. Chain-specific absent/sentinel
@@ -834,13 +837,6 @@ interface IClprVerifier {
   //   new_endpoint_manifest : ClprEndpointManifest — verified manifest if the bundle
   //                          contains a manifest proof; empty (field not set) if none.
   //
-  //   has_channel_state     : bool — true iff this bundle proves channel sync data.
-  //                          False denotes an authority-only update: all sync/message
-  //                          anchor fields are zero/absent, messages and manifest empty,
-  //                          and a different non-empty successor and ID are required.
-  //                          Absence is explicit because a verified proof can itself
-  //                          yield all-zero sync data.
-  //
   // Used during:
   //   - submitBundle (on-chain bundle processing)
   //
@@ -850,7 +846,7 @@ interface IClprVerifier {
     returns (ChannelSyncData, ClprMessagePayload[],
              uint64 anchor_message_id, bytes anchor_running_hash,
              bytes new_trust_anchor, bytes new_trust_anchor_id,
-             ClprEndpointManifest new_endpoint_manifest, bool has_channel_state)
+             ClprEndpointManifest new_endpoint_manifest)
 }
 ```
 
@@ -912,8 +908,8 @@ A transition bundle:
    required evidence and returns `new_trust_anchor` and `new_trust_anchor_id`. If no valid evidence is
    present the verifier MUST revert.
 3. MAY carry zero application messages (trust-only bundle — see §2.1.2 Bundle Progress Criteria, Condition 2).
-   If there is no channel-state proof, it MUST return `has_channel_state = false`; zero-message state
-   proofs instead return true and remain subject to ordinary channel checks.
+   If there is no channel-state proof, it MUST return all-zero `sync_data`; zero-message state
+   proofs instead return their proven `sync_data` and remain subject to ordinary channel checks.
 4. After the transition bundle is accepted, `Channel.trust_anchor` holds whatever the verifier returned, and
    `Channel.trust_anchor_id` holds the returned `new_trust_anchor_id`. All subsequent
    bundles are verified against the new value.
@@ -1065,11 +1061,11 @@ for the running hash chain's security requirements. The hash algorithm can be up
 When a bundle is submitted to the CLPR Service (post-consensus):
 
 **Step 1 — Verifier call.** Pass `bundle_payload`, the Channel's current `trust_anchor`, and the Channel's stored `channel_context` to the Channel's verifier contract via `verifyBundle(bundle_payload, trust_anchor, channel_context)`. The verifier returns
-`(ChannelSyncData sync_data, ClprMessagePayload[] messages, uint64 anchor_message_id, bytes anchor_running_hash, bytes new_trust_anchor, bytes new_trust_anchor_id, ClprEndpointManifest new_endpoint_manifest, bool has_channel_state)`.
+`(ChannelSyncData sync_data, ClprMessagePayload[] messages, uint64 anchor_message_id, bytes anchor_running_hash, bytes new_trust_anchor, bytes new_trust_anchor_id, ClprEndpointManifest new_endpoint_manifest)`.
 If the verifier reverts or returns an error, reject the entire bundle. The submitting account pays the transaction
 cost.
 
-**Step 1 (authority-only result).** When `has_channel_state` is false, the service MUST require
+**Step 1 (authority-only result).** When `sync_data.next_message_id` is 0, the service MUST require
 all sync-data and message-anchor fields to be zero/absent, no messages, an empty manifest (including
 its identity and endpoints), and non-empty `new_trust_anchor` and `new_trust_anchor_id`. The new
 anchor bytes MUST differ from the stored anchor; an ID change alone is insufficient. Otherwise reject.
@@ -1080,11 +1076,11 @@ invoke applications, auto-resume PAUSED channels, or advance CLOSING/DRAINED sta
 remains unchanged. This authority change is sufficient progress regardless of existing queue history.
 A verifier failure or invalid result leaves the original authority unchanged.
 
-The presence flag is a coordinated verifier/service interface revision. Existing state-proof verifiers
-MUST return true; callers MUST NOT infer absence from an all-zero struct or silently accept the older
-return tuple. Implementations using the earlier combined `QueueMetadata` return shape append the
-same flag and require the entire metadata struct to be zero when false. This revision does not
-change stored channel layout or the opaque `bundle_payload` field.
+`next_message_id` is initialized to 1 and Step 3 rejects a value below `received_message_id + 1`, so
+no accepted state-bearing result has all-zero `sync_data`. All-zero `sync_data` therefore marks an
+authority-only result without any change to the verifier interface, the stored channel layout, or the
+opaque `bundle_payload` field. A result with `sync_data.next_message_id` of 0 that does not meet the
+requirements above is rejected.
 
 **Step 1a — NoProgress check.** Reject the bundle with `NoProgress` if none of the five Bundle Progress
 Criteria (§2.1.2) holds. Concretely, reject if all of the following are true simultaneously:
@@ -1118,6 +1114,9 @@ is tainted.)
 - The first message's ID MUST equal `received_message_id + 1`.
 - Subsequent message IDs MUST be contiguous and ascending (each ID = previous ID + 1).
 - If any constraint is violated, reject the entire bundle.
+
+Whether or not messages are returned, `sync_data.next_message_id` MUST be at least `received_message_id + 1`:
+the sender cannot have enqueued fewer messages than this side has received. Otherwise reject the entire bundle.
 
 **Step 4 — Running hash verification.** Starting from the Channel's current `received_running_hash`, recompute
 the hash chain for each message in the bundle sequentially: apply `SHA-256(prev_hash || serialized_payload)`.

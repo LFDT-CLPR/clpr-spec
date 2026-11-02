@@ -34,14 +34,14 @@ than in the ledger-neutral CLPR transport or in the consensus node's state queue
 This repo owns the protocol definition; the proposed proto is ready for a separate
 HAPI publication. The existing WRAPS/ledger-ID verifier remains a separate profile.
 
-The common verifier result gains `has_channel_state`. Inferring absence from zero
-counters is unsafe: zero is legitimate proven state, and processing synthetic
-zero counters against a nonempty channel can trigger replay, ack, or lifecycle
-rules. A false flag requires an otherwise empty result and a genuine authority
-change. The service writes only the anchor and ID, returning before channel
-processing. A state-bearing empty-message bundle still follows the normal path.
+Authority-only results are marked by all-zero channel sync data, not by an extra
+verifier return. `next_message_id` is initialized to 1 and the replay defense
+rejects a value below `received_message_id + 1`, so no accepted state-bearing
+result is all-zero. The service writes only the anchor and ID, returning before
+channel processing. A state-bearing empty-message bundle still follows the normal
+path. A state proof that decodes to all-zero sync data and carries a changed
+successor is treated as authority-only; without a changed successor it is rejected.
 
-This is a coordinated verifier/service ABI revision, with no shared storage layout
-change. No old-ABI fallback, automatic anchor-profile migration, or claim of
-roster adoption is introduced. Endpoints must implement the envelope, retain
+The verifier interface and shared storage layout are unchanged. No automatic
+anchor-profile migration or claim of roster adoption is introduced. Endpoints must implement the envelope, retain
 rotation evidence, and submit state proofs separately after catch-up.
