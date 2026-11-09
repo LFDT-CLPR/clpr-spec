@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+
+package clpr.v0_2;
+
+import "protocol/schema/clpr_channel_status.proto";
+import "protocol/schema/clpr_message.proto";
+
+// The sender's queue state, as carried in a bundle. Meaning: protocol/bundle.md §2.
+message ClprQueueMetadata {
+  uint64 next_message_id = 1;
+  bytes sent_running_hash = 2;
+  uint64 received_message_id = 3;
+  bytes received_running_hash = 4;
+  ClprChannelStatus status = 5;
+
+  // Trust anchor id: see protocol/bundle.md §2.
+  bytes trust_anchor_id = 6;
+
+  // Informational. See protocol/bundle.md §2.
+  uint64 endpoint_manifest_version = 7;
+}
+
+// Queue metadata and messages, serialized inside the wire layout of a proof
+// scheme that uses this encoding. Each proof scheme states whether it does.
+message ClprBundleContent {
+  ClprQueueMetadata metadata = 1;
+
+  // Message payloads in queue order.
+  repeated ClprMessagePayload messages = 2;
+
+  reserved 3 to 5;
+}
