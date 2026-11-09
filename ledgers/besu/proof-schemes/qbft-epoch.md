@@ -9,7 +9,7 @@ This proof scheme proves Besu CLPR Service state under QBFT seals, and follows v
 | Role | Implemented by |
 |---|---|
 | Bundle producer | The Besu CLPR Endpoint |
-| Configuration and manifest proof producer | None in v0.2 ([OI-3](../../../protocol/open-issues.md#oi-3-configuration-proof-format-for-the-qbft-epoch-scheme)) |
+| Configuration and manifest proof producer | None in v0.2 ([OI-2](../../../protocol/open-issues.md#oi-2-configuration-proof-format-for-the-qbft-epoch-scheme)) |
 | Verifiers | A verifier contract for EVM ledgers; Hiero's built-in verifier |
 
 This is the only Besu proof scheme with a bundle producer in v0.2.
@@ -94,7 +94,7 @@ bundle := RLP(items)
 - A verifier accepts messages with any number of boundary headers ([§6](#6-decode-and-verify-algorithm)). Which messages a producer includes when `k > 1` is set by [bundle aggregation §3](../bundle-aggregation.md#3-message-range-and-limits).
 - Field 1 of the bundle content SHOULD hold the queue metadata of `H`. Verifiers ignore it.
 
-**Catch-up limit.** When the peer is more than `maxHeaders` epochs behind, a bundle carries `maxHeaders` boundary headers and the peer catches up over several bundles. `H` stays the head block, so each such bundle is accepted only if a quorum of the set listed in its last boundary header sealed `H`. If the validator set changed in a later epoch beyond what that quorum tolerates, the bundle is rejected and the peer does not catch up. This limit is open issue [OI-7](../../../protocol/open-issues.md#oi-7-qbft-epoch-catch-up-across-a-validator-change).
+**Catch-up limit.** When the peer is more than `maxHeaders` epochs behind, a bundle carries `maxHeaders` boundary headers and the peer catches up over several bundles. `H` stays the head block, so each such bundle is accepted only if a quorum of the set listed in its last boundary header sealed `H`. If the validator set changed in a later epoch beyond what that quorum tolerates, the bundle is rejected and the peer does not catch up. This limit is open issue [OI-6](../../../protocol/open-issues.md#oi-6-qbft-epoch-catch-up-across-a-validator-change).
 
 ## 6. Decode-and-verify algorithm
 
@@ -174,7 +174,7 @@ A verifier MUST reject the bundle when:
 
 ### 9.1 Configuration proof
 
-The layout of the qbft-epoch configuration proof is open issue **OI-3** ([Open issues](../../../protocol/open-issues.md#oi-3-configuration-proof-format-for-the-qbft-epoch-scheme)). Two layouts are in use, one protobuf-encoded and one RLP-encoded; neither is normative in this revision. A verifier contract documents the layout it accepts.
+The layout of the qbft-epoch configuration proof is open issue **OI-2** ([Open issues](../../../protocol/open-issues.md#oi-2-configuration-proof-format-for-the-qbft-epoch-scheme)). Two layouts are in use, one protobuf-encoded and one RLP-encoded; neither is normative in this revision. A verifier contract documents the layout it accepts.
 
 Whatever its layout, `verifyConfig` MUST return:
 - an initial trust anchor that determines `V`, `E`, `L` and `codeHash` as in [§7](#7-trust-anchor-changes), where `V` is the validator set listed in a sealed epoch boundary header of epoch `E`;

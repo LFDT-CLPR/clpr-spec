@@ -66,7 +66,14 @@ Messages are received in id order, with no gaps, and each message is processed e
 
 ## 3. Payload encoding
 
-The **payload bytes** of a message are the encoding of its `MessagePayload` defined in [`schema/`](schema/README.md). The running hash (Section 4) is computed over these bytes, so the payload bytes stored in the sender's queue MUST reach the receiving CLPR Service unchanged. Endpoints and verifiers therefore copy them byte for byte; decoding and re-encoding can change them. The receiver hashes the bytes it receives and decodes them under [strict decoding](conventions.md#3-abstract-data-structures); a payload that fails to decode rejects the bundle. Because the encoding is not canonical, the open questions this raises are recorded as [OI-1](open-issues.md#oi-1-message-encoding-in-the-running-hash).
+Every ledger uses one data format for messages. The **payload bytes** of a message are the [canonical protobuf encoding](schema/README.md#2-encoding-rules) of its `ClprMessagePayload`. A CLPR Service MUST store and hash its outbound payloads in that encoding. The running hash (Section 4) is computed over these bytes.
+
+A canonical payload has exactly one encoding, so decoding and re-encoding it reproduces the same bytes. This is what keeps the running hash the same on both ledgers:
+- A CLPR Endpoint or verifier that carries a payload MUST deliver the canonical bytes. It MAY copy them, or decode the payload and re-encode it canonically.
+- The receiving CLPR Service computes the running hash over the payload bytes it receives or over the canonical encoding of the decoded payload. For a canonical payload the two are the same.
+- The receiver decodes each payload under [strict decoding](conventions.md#3-abstract-data-structures). A payload that fails to decode rejects the bundle.
+
+A CLPR Service MAY decode payloads into its own native types, but it always computes the running hash over the canonical protobuf bytes.
 
 ## 4. Running hash
 

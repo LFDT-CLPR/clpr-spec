@@ -214,7 +214,7 @@ function verifyConfig(config, channelId, manifestProof):
     return (channelId ‖ items[0], items[1], items[0], items[2], items[3], anchor, anchorId, manifest)
 ```
 
-The configuration proof establishes the initial validator set: the set the configuration header lists, checked against that header's own seals. Other `verifyConfig` outputs are registration inputs; which outputs a configuration proof must authenticate is open issue [OI-2](../../../protocol/open-issues.md#oi-2-what-the-configuration-proof-must-authenticate).
+The configuration proof establishes the initial validator set: the set the configuration header lists, checked against that header's own seals. Other `verifyConfig` outputs are registration inputs; which outputs a configuration proof must authenticate is open issue [OI-1](../../../protocol/open-issues.md#oi-1-what-the-configuration-proof-must-authenticate).
 
 A verifier MUST reject the configuration proof when it is empty, is not an RLP list of 6 items, has a header with fewer than 15 fields, has a throttles list of other than 5 or 7 items, has a descriptor that is not a 2-item list with mode 0, or when the header fails `RequireQuorum` against its own set.
 

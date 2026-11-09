@@ -11,7 +11,7 @@ A connector posts its **locked stake** when it completes registration ([connecto
 The stake is separate from the funds that pay for execution. Execution charges are paid from the connector contract's own balance ([execution charges](channel-economics.md#1-execution-charges)).
 
 - **Minimum stake.** The Service SHOULD reject a registration whose stake is below `minLockedStake`.
-- **Sizing.** The stake backs the connector's commitment that its counterpart on the peer ledger exists and can pay for execution ([connectors on both ledgers](../protocol/connector-setup.md#3-connectors-on-both-ledgers)). It SHOULD cover the losses the connector can cause to submitters on its ledger. How to calibrate it is an open issue ([OI-6](../protocol/open-issues.md#oi-6-calibration-of-the-connector-stake)).
+- **Sizing.** The stake backs the connector's commitment that its counterpart on the peer ledger exists and can pay for execution ([connectors on both ledgers](../protocol/connector-setup.md#3-connectors-on-both-ledgers)). It SHOULD cover the losses the connector can cause to submitters on its ledger. How to calibrate it is an open issue ([OI-5](../protocol/open-issues.md#oi-5-calibration-of-the-connector-stake)).
 - **Removal.** The connector admin removes the connector, and the Service returns the remaining stake to a recipient the admin names. Removal is refused while the connector has messages in flight ([removal](../protocol/connector-setup.md#5-removal)).
 
 Ledger notes:

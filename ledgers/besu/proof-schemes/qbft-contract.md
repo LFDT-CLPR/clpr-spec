@@ -228,7 +228,7 @@ function verifyConfig(config, channelId, manifestProof):
     return (channelId ‖ items[0], items[1], items[0], items[2], items[3], anchor, anchorId, manifest)
 ```
 
-The configuration proof establishes the initial validator set, proven from the validator contract's storage in the configuration header's state and checked against that header's seals, and the validator contract's code hash, taken from its proven account. Other `verifyConfig` outputs are registration inputs; which outputs a configuration proof must authenticate is open issue [OI-2](../../../protocol/open-issues.md#oi-2-what-the-configuration-proof-must-authenticate).
+The configuration proof establishes the initial validator set, proven from the validator contract's storage in the configuration header's state and checked against that header's seals, and the validator contract's code hash, taken from its proven account. Other `verifyConfig` outputs are registration inputs; which outputs a configuration proof must authenticate is open issue [OI-1](../../../protocol/open-issues.md#oi-1-what-the-configuration-proof-must-authenticate).
 
 The configuration header SHOULD be a block whose state does not change the validator array. Its seals are checked against the set proven in its own state, so a header whose block changes the set is checked against the new set and can be rejected.
 

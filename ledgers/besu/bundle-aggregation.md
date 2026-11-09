@@ -32,7 +32,7 @@ n := min(len(messages), peer.max_messages_per_bundle)
 messages := the first n of messages
 ```
 
-- Each payload is the exact bytes stored in the message queue; the endpoint MUST NOT re-encode it.
+- Each payload is the exact bytes stored in the message queue, which are its [canonical encoding](../../protocol/messaging.md#3-payload-encoding). An endpoint that decodes and re-encodes a payload MUST reproduce those bytes.
 - The endpoint MAY shorten the range from the end, to apply a lower local limit or a limit of the proof scheme.
 - With the qbft-epoch scheme, when the bundle carries more than one epoch boundary header (`k > 1` in [qbft-epoch §5](proof-schemes/qbft-epoch.md#5-encoding-algorithm)), the endpoint SHOULD select no messages.
 - If the encoded bundle would exceed the peer's `max_sync_bytes`, the endpoint shortens the range or sends nothing.

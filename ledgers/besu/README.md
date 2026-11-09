@@ -31,7 +31,7 @@ A storage slot number and a storage word are 256-bit unsigned integers: `slot + 
 | 1 | Message queues: a mapping from channel id to a mapping from message id to the stored message | The last message's running hash ([§3.3](#33-message-running-hash)) |
 | 15 | Channels: a mapping from channel id to the channel record | Queue metadata ([§3.2](#32-channel-record)) |
 | 18 | Endpoint manifest commitment: `keccak256` of the encoded local endpoint manifest | Manifest proofs ([§3.5](#35-verifying-the-clpr-service-state)) |
-| 25 | Service address, as a Solidity `bytes` value | The protobuf qbft-epoch configuration proof layout ([OI-3](../../protocol/open-issues.md#oi-3-configuration-proof-format-for-the-qbft-epoch-scheme)) |
+| 25 | Service address, as a Solidity `bytes` value | The protobuf qbft-epoch configuration proof layout ([OI-2](../../protocol/open-issues.md#oi-2-configuration-proof-format-for-the-qbft-epoch-scheme)) |
 
 The manifest commitment is `keccak256(m)`, where `m` is the [protocol encoding](../../protocol/schema/README.md) of the CLPR Service's current local [endpoint manifest](../../protocol/endpoint-manifest.md#3-local-manifest), with default values omitted. The CLPR Service recomputes it whenever the manifest version or the service address changes.
 
@@ -79,7 +79,7 @@ All proofs are EIP-1186 Merkle-Patricia proofs, as returned by `eth_getProof`, e
 
 Trie nodes are referenced by their `keccak256` hash. A verifier MAY reject a proof in which a node embeds a child node of fewer than 32 bytes instead of referencing it by hash.
 
-A producer MUST put the five channel slots in the order of [§3.2](#32-channel-record), followed by the message slot when one is present. It MUST copy the message payloads byte for byte from the message queue, because the running hash covers those exact bytes. The manifest preimage MUST be the encoding whose `keccak256` is the value of slot 18 ([§3.1](#31-service-slots)).
+A producer MUST put the five channel slots in the order of [§3.2](#32-channel-record), followed by the message slot when one is present. The message payloads MUST be the canonical bytes stored in the message queue, because the running hash covers those exact bytes ([payload encoding](../../protocol/messaging.md#3-payload-encoding)). The manifest preimage MUST be the encoding whose `keccak256` is the value of slot 18 ([§3.1](#31-service-slots)).
 
 The pseudocode of this document and of the Besu proof schemes writes decoding as `decode T(x)` and encoding as `serialize(x)` ([Conventions §4](../../protocol/conventions.md#4-pseudocode)), and uses these operations:
 - `RLP(x)` is the RLP encoding of `x`, a byte string or a list of such values.

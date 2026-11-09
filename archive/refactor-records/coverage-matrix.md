@@ -36,7 +36,7 @@ This record accounts for every item of the EAP v0.2 specification text (archived
 | | **[1.1 Ledger Identity and Configuration](../eap-v0.2-source/clpr-service-spec.md#11-ledger-identity-and-configuration)** | | |
 | 10 | Protobuf package declaration | specified | [protocol/endpoint-sync/schema/clpr_endpoint_sync.proto](../../protocol/endpoint-sync/schema/clpr_endpoint_sync.proto); [protocol/endpoint-sync/README.md §7](../../protocol/endpoint-sync/README.md#7-schema) |
 | 11 | `ClprLedgerConfiguration` structure and field numbers | specified | [protocol/ledger-configuration.md §2](../../protocol/ledger-configuration.md#2-ledger-configuration); [protocol/schema/clpr_ledger_configuration.proto](../../protocol/schema/clpr_ledger_configuration.proto) |
-| 12 | Configurations with an unrecognized protocol version are rejected | specified | [protocol/ledger-configuration.md §4](../../protocol/ledger-configuration.md#4-protocol-version); [protocol/open-issues.md OI-8](../../protocol/open-issues.md#oi-8-protocol-version-at-channel-setup) |
+| 12 | Configurations with an unrecognized protocol version are rejected | specified | [protocol/ledger-configuration.md §4](../../protocol/ledger-configuration.md#4-protocol-version); [protocol/open-issues.md OI-7](../../protocol/open-issues.md#oi-7-protocol-version-at-channel-setup) |
 | 13 | Chain id uses CAIP-2 format | specified | [protocol/ledger-configuration.md §1](../../protocol/ledger-configuration.md#1-ledger-identity); [protocol/conventions.md §5](../../protocol/conventions.md#5-identifiers) |
 | 14 | `service_address` is the on-ledger address of the CLPR Service | specified | [protocol/ledger-configuration.md §2](../../protocol/ledger-configuration.md#2-ledger-configuration) |
 | 15 | Configuration `timestamp` is the consensus time of the last change and increases monotonically | specified | [protocol/ledger-configuration.md §2](../../protocol/ledger-configuration.md#2-ledger-configuration), [§5.3](../../protocol/ledger-configuration.md#53-receiving) |
@@ -235,7 +235,7 @@ This record accounts for every item of the EAP v0.2 specification text (archived
 | 182 | Peer already CLOSED: rejection confirms closure | specified | [protocol/endpoint-sync/README.md §5.3](../../protocol/endpoint-sync/README.md#53-channel-status); [protocol/channel-state-transitions.md §5](../../protocol/channel-state-transitions.md#5-closing-and-draining) |
 | 183 | Close notification satisfies a progress criterion | specified | [protocol/channel-state-transitions.md §3](../../protocol/channel-state-transitions.md#3-progress) |
 | | **[4.1 Running Hash Computation](../eap-v0.2-source/clpr-service-spec.md#41-running-hash-computation)** | | |
-| 184 | Running hash formula over the serialized payload | specified | [protocol/messaging.md §3](../../protocol/messaging.md#3-payload-encoding), [§4](../../protocol/messaging.md#4-running-hash); [protocol/open-issues.md OI-1](../../protocol/open-issues.md#oi-1-message-encoding-in-the-running-hash) |
+| 184 | Running hash formula over the serialized payload | specified | [protocol/messaging.md §3](../../protocol/messaging.md#3-payload-encoding), [§4](../../protocol/messaging.md#4-running-hash); [protocol/schema §2](../../protocol/schema/README.md#2-encoding-rules) |
 | 185 | Both running hashes start at 32 zero bytes | specified | [protocol/messaging.md §4](../../protocol/messaging.md#4-running-hash) |
 | 186 | Hash algorithm rationale and upgrade path | archived | Rationale; archive only |
 | | **[4.2 Bundle Verification Algorithm](../eap-v0.2-source/clpr-service-spec.md#42-bundle-verification-algorithm)** | | |
@@ -427,7 +427,7 @@ This record accounts for every item of the EAP v0.2 specification text (archived
 | | **[3. Architecture](../eap-v0.2-source/clpr-service.md#3-architecture)** | | |
 | 18 | Four architectural layers | overview | [clpr-overview.md §2](../../clpr-overview.md#2-major-parts) |
 | 19 | Network layer: gRPC, protobuf, verifier contracts | overview | [clpr-overview.md §2](../../clpr-overview.md#2-major-parts) |
-| 20 | Note on an encoding-format review | archived | Superseded note; the encoding question is open issue OI-1 |
+| 20 | Note on an encoding-format review | archived | Superseded note; the encoding is canonical protobuf, [protocol/schema §2](../../protocol/schema/README.md#2-encoding-rules) |
 | | **[3.1.0 The CLPR Service](../eap-v0.2-source/clpr-service.md#310-the-clpr-service)** | | |
 | 21 | The CLPR Service holds all CLPR state and logic | overview | [clpr-overview.md §2](../../clpr-overview.md#2-major-parts) |
 | 22 | State owned by the Service | merged | Same as `clpr-service-spec.md` row 79; [blueprint/clpr-service.md §1](../../blueprint/clpr-service.md#1-structure-and-internal-state) |
@@ -439,7 +439,7 @@ This record accounts for every item of the EAP v0.2 specification text (archived
 | 27 | Chain id examples | specified | [protocol/conventions.md §5](../../protocol/conventions.md#5-identifiers) |
 | 28 | Registered CAIP-2 namespaces for public networks | specified | [protocol/ledger-configuration.md §1](../../protocol/ledger-configuration.md#1-ledger-identity) |
 | 29 | Anyone can claim a chain id; applications verify the channel | specified | [protocol/ledger-configuration.md §1](../../protocol/ledger-configuration.md#1-ledger-identity) |
-| 30 | Protocol version rules | merged | Same as `clpr-service-spec.md` row 12; [protocol/ledger-configuration.md §4](../../protocol/ledger-configuration.md#4-protocol-version); [protocol/open-issues.md OI-8](../../protocol/open-issues.md#oi-8-protocol-version-at-channel-setup) |
+| 30 | Protocol version rules | merged | Same as `clpr-service-spec.md` row 12; [protocol/ledger-configuration.md §4](../../protocol/ledger-configuration.md#4-protocol-version); [protocol/open-issues.md OI-7](../../protocol/open-issues.md#oi-7-protocol-version-at-channel-setup) |
 | 31 | A new protocol version propagates by configuration update | specified | [protocol/ledger-configuration.md §4](../../protocol/ledger-configuration.md#4-protocol-version) |
 | 32 | Configuration timestamp is consensus time and monotonic | merged | Same as `clpr-service-spec.md` row 15; [protocol/ledger-configuration.md §2](../../protocol/ledger-configuration.md#2-ledger-configuration) |
 | 33 | Messages-per-bundle throttle | merged | Same as `clpr-service-spec.md` row 24; [protocol/ledger-configuration.md §3](../../protocol/ledger-configuration.md#3-throttles) |
@@ -531,7 +531,7 @@ This record accounts for every item of the EAP v0.2 specification text (archived
 | | **[3.2.2 Message Storage](../eap-v0.2-source/clpr-service.md#322-message-storage)** | | |
 | 112 | Queue key description | archived | Superseded wording; archive only |
 | 113 | One intermixed stream with a shared hash chain | merged | Same as `clpr-service-spec.md` row 47; [protocol/messaging.md §1](../../protocol/messaging.md#1-message-types), [§2](../../protocol/messaging.md#2-message-identifiers-and-queue) |
-| 114 | Running hash formula | merged | Same as `clpr-service-spec.md` row 184; [protocol/messaging.md §4](../../protocol/messaging.md#4-running-hash); [protocol/open-issues.md OI-1](../../protocol/open-issues.md#oi-1-message-encoding-in-the-running-hash) |
+| 114 | Running hash formula | merged | Same as `clpr-service-spec.md` row 184; [protocol/messaging.md §4](../../protocol/messaging.md#4-running-hash); [protocol/schema §2](../../protocol/schema/README.md#2-encoding-rules) |
 | 115 | Queued entry: payload and running hash | merged | Same as `clpr-service-spec.md` row 46; [protocol/messaging.md §2](../../protocol/messaging.md#2-message-identifiers-and-queue) |
 | 116 | Eager configuration-update description | archived | Superseded by lazy configuration updates; archive only |
 | 117 | Unknown control type rejects the bundle | merged | Same as `clpr-service-spec.md` row 41; [protocol/messaging.md §1](../../protocol/messaging.md#1-message-types); [protocol/ledger-configuration.md §4](../../protocol/ledger-configuration.md#4-protocol-version) |
@@ -608,8 +608,8 @@ This record accounts for every item of the EAP v0.2 specification text (archived
 | 177 | Source-side penalty | merged | Same as `clpr-service-spec.md` row 229; [blueprint/stakes-and-bonds.md §2.1](../../blueprint/stakes-and-bonds.md#21-when-a-connector-is-slashed) |
 | 178 | Escalation and bans | merged | Same as `clpr-service-spec.md` row 230; [blueprint/stakes-and-bonds.md §2.2](../../blueprint/stakes-and-bonds.md#22-penalty) |
 | 179 | Compensation asymmetry | archived | Acknowledged limitation; rationale only; archive only |
-| 180 | Stake-to-exposure invariant | merged | Same as `clpr-service-spec.md` row 231; [blueprint/stakes-and-bonds.md §1](../../blueprint/stakes-and-bonds.md#1-connector-stake); [protocol/open-issues.md OI-6](../../protocol/open-issues.md#oi-6-calibration-of-the-connector-stake) |
-| 181 | Receive-side economics and the free-rider problem | open issue OI-5 | [protocol/open-issues.md OI-5](../../protocol/open-issues.md#oi-5-compensation-for-sending-bundles) |
+| 180 | Stake-to-exposure invariant | merged | Same as `clpr-service-spec.md` row 231; [blueprint/stakes-and-bonds.md §1](../../blueprint/stakes-and-bonds.md#1-connector-stake); [protocol/open-issues.md OI-5](../../protocol/open-issues.md#oi-5-calibration-of-the-connector-stake) |
+| 181 | Receive-side economics and the free-rider problem | open issue OI-4 | [protocol/open-issues.md OI-4](../../protocol/open-issues.md#oi-4-compensation-for-sending-bundles) |
 | | **[3.3.5 Open Economic Design Issues](../eap-v0.2-source/clpr-service.md#335-open-economic-design-issues)** | | |
 | 182 | Queue monopolization | merged | Same as `clpr-service-spec.md` row 297; [blueprint/channel-economics.md §3](../../blueprint/channel-economics.md#3-queue-quotas); [blueprint/clpr-service.md §6.7](../../blueprint/clpr-service.md#67-queue-monopolization) |
 | | **[3.4 Application Layer](../eap-v0.2-source/clpr-service.md#34-application-layer)** | | |
@@ -653,7 +653,7 @@ This record accounts for every item of the EAP v0.2 specification text (archived
 | 205 | Recovery scenario R7 | merged | Same as `clpr-service-spec.md` row 304; [blueprint/clpr-service.md §7](../../blueprint/clpr-service.md#7-recovery-scenarios) |
 | 206 | Recovery scenario R8 | merged | Same as `clpr-service-spec.md` row 305; [blueprint/clpr-service.md §7](../../blueprint/clpr-service.md#7-recovery-scenarios) |
 | 207 | Recovery scenario R9 | merged | Same as `clpr-service-spec.md` row 306; [blueprint/clpr-service.md §7](../../blueprint/clpr-service.md#7-recovery-scenarios) |
-| 208 | Messages left unresolved when a channel cannot drain | open issue OI-4 | [protocol/open-issues.md OI-4](../../protocol/open-issues.md#oi-4-messages-left-without-replies-when-a-channel-cannot-drain) |
+| 208 | Messages left unresolved when a channel cannot drain | open issue OI-3 | [protocol/open-issues.md OI-3](../../protocol/open-issues.md#oi-3-messages-left-without-replies-when-a-channel-cannot-drain) |
 | | **[6.1 Risks](../eap-v0.2-source/clpr-service.md#61-risks)** | | |
 | 209 | Project risks | archived | Project-management content; archive only |
 
@@ -677,7 +677,7 @@ The verifier documents are [`verifiers/README.md`](../eap-v0.2-source/verifiers/
 | | **[verifiers/hiero/state_proof.md: Overview](../eap-v0.2-source/verifiers/hiero/state_proof.md#overview)** | | |
 | 7 | Hiero proofs authenticate a signed state snapshot with the channel and message leaves | specified | [ledgers/hiero/proof-schemes/hints-wraps.md §2](../../ledgers/hiero/proof-schemes/hints-wraps.md#2-trust-model), [§4.1](../../ledgers/hiero/proof-schemes/hints-wraps.md#41-bundle) |
 | | **[verifiers/hiero/state_proof.md: Cryptographic primitives](../eap-v0.2-source/verifiers/hiero/state_proof.md#cryptographic-primitives)** | | |
-| 8 | Hiero cryptographic primitives (SHA-384 Merkle tree, hinTS, WRAPS) | specified | [ledgers/hiero/proof-schemes/hints-wraps.md §2](../../ledgers/hiero/proof-schemes/hints-wraps.md#2-trust-model), [§4.4](../../ledgers/hiero/proof-schemes/hints-wraps.md#44-block-signature); [protocol/open-issues.md OI-9](../../protocol/open-issues.md#oi-9-hints-and-wraps-verification-parameters) |
+| 8 | Hiero cryptographic primitives (SHA-384 Merkle tree, hinTS, WRAPS) | specified | [ledgers/hiero/proof-schemes/hints-wraps.md §2](../../ledgers/hiero/proof-schemes/hints-wraps.md#2-trust-model), [§4.4](../../ledgers/hiero/proof-schemes/hints-wraps.md#44-block-signature); [protocol/open-issues.md OI-8](../../protocol/open-issues.md#oi-8-hints-and-wraps-verification-parameters) |
 | | **[verifiers/hiero/state_proof.md: SHA-384 Merkle domain prefixes](../eap-v0.2-source/verifiers/hiero/state_proof.md#sha-384-merkle-domain-prefixes)** | | |
 | 9 | Merkle domain-separation prefixes | specified | [ledgers/hiero/proof-schemes/hints-wraps.md §4.3](../../ledgers/hiero/proof-schemes/hints-wraps.md#43-hashing) |
 | | **[verifiers/hiero/state_proof.md: Wire format](../eap-v0.2-source/verifiers/hiero/state_proof.md#wire-format)** | | |
@@ -702,7 +702,7 @@ The verifier documents are [`verifiers/README.md`](../eap-v0.2-source/verifiers/
 | 23 | Hiero trust anchor encoding and empty anchor id | specified | [ledgers/hiero/proof-schemes/hints-wraps.md §7](../../ledgers/hiero/proof-schemes/hints-wraps.md#7-trust-anchor-changes), [§9.2](../../ledgers/hiero/proof-schemes/hints-wraps.md#92-verification) |
 | 24 | Hiero ledger id at setup and afterwards | specified | [ledgers/hiero/proof-schemes/hints-wraps.md §7](../../ledgers/hiero/proof-schemes/hints-wraps.md#7-trust-anchor-changes), [§9.2](../../ledgers/hiero/proof-schemes/hints-wraps.md#92-verification) |
 | | **[verifiers/hiero/trust_anchor.md: Initial anchor derivation](../eap-v0.2-source/verifiers/hiero/trust_anchor.md#initial-anchor-derivation)** | | |
-| 25 | Hiero initial anchor derivation at setup | specified | [ledgers/hiero/proof-schemes/hints-wraps.md §9.2](../../ledgers/hiero/proof-schemes/hints-wraps.md#92-verification); [protocol/open-issues.md OI-2](../../protocol/open-issues.md#oi-2-what-the-configuration-proof-must-authenticate) |
+| 25 | Hiero initial anchor derivation at setup | specified | [ledgers/hiero/proof-schemes/hints-wraps.md §9.2](../../ledgers/hiero/proof-schemes/hints-wraps.md#92-verification); [protocol/open-issues.md OI-1](../../protocol/open-issues.md#oi-1-what-the-configuration-proof-must-authenticate) |
 | 26 | After setup the stored ledger id governs verification | specified | [ledgers/hiero/proof-schemes/hints-wraps.md §6](../../ledgers/hiero/proof-schemes/hints-wraps.md#6-decode-and-verify-algorithm) |
 | | **[verifiers/hiero/trust_anchor.md: Detection](../eap-v0.2-source/verifiers/hiero/trust_anchor.md#detection)** | | |
 | 27 | Detection of a ledger id change | archived | Not applicable: the ledger id does not change; archive only |
@@ -711,7 +711,7 @@ The verifier documents are [`verifiers/README.md`](../eap-v0.2-source/verifiers/
 | | **[verifiers/hiero/trust_anchor.md: On-chain update](../eap-v0.2-source/verifiers/hiero/trust_anchor.md#on-chain-update)** | | |
 | 29 | Planned on-chain anchor update | archived | Superseded design; archive only |
 | | **[verifiers/hiero/trust_anchor.md: Security properties](../eap-v0.2-source/verifiers/hiero/trust_anchor.md#security-properties)** | | |
-| 30 | Hiero trust anchor security properties | specified | [ledgers/hiero/proof-schemes/hints-wraps.md §2](../../ledgers/hiero/proof-schemes/hints-wraps.md#2-trust-model); [protocol/open-issues.md OI-2](../../protocol/open-issues.md#oi-2-what-the-configuration-proof-must-authenticate) |
+| 30 | Hiero trust anchor security properties | specified | [ledgers/hiero/proof-schemes/hints-wraps.md §2](../../ledgers/hiero/proof-schemes/hints-wraps.md#2-trust-model); [protocol/open-issues.md OI-1](../../protocol/open-issues.md#oi-1-what-the-configuration-proof-must-authenticate) |
 | | **[verifiers/hiero/verifier_contract.md: Overview](../eap-v0.2-source/verifiers/hiero/verifier_contract.md#overview)** | | |
 | 31 | Hiero verifier delegates to the built-in verifier | specified | [ledgers/hiero/README.md §3](../../ledgers/hiero/README.md#3-built-in-verifiers); [ledgers/hiero/verifier-api.md §1](../../ledgers/hiero/verifier-api.md#1-scope) |
 | | **[verifiers/hiero/verifier_contract.md: Inputs](../eap-v0.2-source/verifiers/hiero/verifier_contract.md#inputs)** | | |
@@ -749,7 +749,7 @@ The verifier documents are [`verifiers/README.md`](../eap-v0.2-source/verifiers/
 | 49 | QBFT trust anchor encoding | specified | [ledgers/besu/proof-schemes/qbft-epoch.md §7](../../ledgers/besu/proof-schemes/qbft-epoch.md#7-trust-anchor-changes) |
 | 50 | QBFT trust anchor id encoding | specified | [ledgers/besu/proof-schemes/qbft-epoch.md §7](../../ledgers/besu/proof-schemes/qbft-epoch.md#7-trust-anchor-changes) |
 | | **[verifiers/qbft/trust_anchor.md: Initial anchor derivation](../eap-v0.2-source/verifiers/qbft/trust_anchor.md#initial-anchor-derivation)** | | |
-| 51 | QBFT initial anchor derivation | specified | [ledgers/besu/proof-schemes/qbft-epoch.md §9.1](../../ledgers/besu/proof-schemes/qbft-epoch.md#91-configuration-proof); [protocol/open-issues.md OI-3](../../protocol/open-issues.md#oi-3-configuration-proof-format-for-the-qbft-epoch-scheme) |
+| 51 | QBFT initial anchor derivation | specified | [ledgers/besu/proof-schemes/qbft-epoch.md §9.1](../../ledgers/besu/proof-schemes/qbft-epoch.md#91-configuration-proof); [protocol/open-issues.md OI-2](../../protocol/open-issues.md#oi-2-configuration-proof-format-for-the-qbft-epoch-scheme) |
 | | **[verifiers/qbft/trust_anchor.md: Detection](../eap-v0.2-source/verifiers/qbft/trust_anchor.md#detection)** | | |
 | 52 | Detection of a validator change by epoch | specified | [ledgers/besu/proof-schemes/qbft-epoch.md §5](../../ledgers/besu/proof-schemes/qbft-epoch.md#5-encoding-algorithm) |
 | | **[verifiers/qbft/trust_anchor.md: Bundle inclusion](../eap-v0.2-source/verifiers/qbft/trust_anchor.md#bundle-inclusion)** | | |
@@ -763,7 +763,7 @@ The verifier documents are [`verifiers/README.md`](../eap-v0.2-source/verifiers/
 | | **[verifiers/qbft/verifier_contract.md: Inputs](../eap-v0.2-source/verifiers/qbft/verifier_contract.md#inputs)** | | |
 | 57 | QBFT `verifyConfig` inputs | specified | [ledgers/evm/verifier-api.md §2](../../ledgers/evm/verifier-api.md#2-functions); [ledgers/besu/proof-schemes/qbft-epoch.md §9](../../ledgers/besu/proof-schemes/qbft-epoch.md#9-configuration-and-manifest-proofs) |
 | | **[verifiers/qbft/verifier_contract.md: Validation steps](../eap-v0.2-source/verifiers/qbft/verifier_contract.md#validation-steps)** | | |
-| 58 | QBFT `verifyConfig` steps | open issue OI-3 | [ledgers/besu/proof-schemes/qbft-epoch.md §9.1](../../ledgers/besu/proof-schemes/qbft-epoch.md#91-configuration-proof); [protocol/open-issues.md OI-3](../../protocol/open-issues.md#oi-3-configuration-proof-format-for-the-qbft-epoch-scheme) |
+| 58 | QBFT `verifyConfig` steps | open issue OI-2 | [ledgers/besu/proof-schemes/qbft-epoch.md §9.1](../../ledgers/besu/proof-schemes/qbft-epoch.md#91-configuration-proof); [protocol/open-issues.md OI-2](../../protocol/open-issues.md#oi-2-configuration-proof-format-for-the-qbft-epoch-scheme) |
 | | **[verifiers/qbft/verifier_contract.md: Outputs](../eap-v0.2-source/verifiers/qbft/verifier_contract.md#outputs)** | | |
 | 59 | QBFT `verifyConfig` outputs | specified | [ledgers/evm/verifier-api.md §2.1](../../ledgers/evm/verifier-api.md#21-verifyconfig), [§3.2](../../ledgers/evm/verifier-api.md#32-channelcontext); [ledgers/besu/proof-schemes/qbft-epoch.md §9.1](../../ledgers/besu/proof-schemes/qbft-epoch.md#91-configuration-proof) |
 | | **[verifiers/qbft/verifier_contract.md: Inputs](../eap-v0.2-source/verifiers/qbft/verifier_contract.md#inputs-1)** | | |
@@ -789,4 +789,4 @@ The verifier documents are [`verifiers/README.md`](../eap-v0.2-source/verifiers/
 | removed: reference only | 0 | 3 | 0 | 3 |
 | **Total** | **306** | **209** | **63** | **578** |
 
-Open issue rows: OI-3 (1), OI-4 (1), OI-5 (1).
+Open issue rows: OI-2 (1), OI-3 (1), OI-4 (1).

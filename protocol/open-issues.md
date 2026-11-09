@@ -4,23 +4,7 @@
 
 This document lists known open design questions in v0.2. The modules each issue affects state the v0.2 rules; nothing here changes them. Resolving an issue that changes Protocol behavior requires a CLIP ([CLIP-0001 §5.2](../clips/clip-0001.md#52-what-each-change-needs)).
 
-## OI-1. Message encoding in the running hash
-
-**Problem.** The running hash covers the serialized bytes of each message payload ([Messaging §4](messaging.md#4-running-hash)). The destination ledger recomputes it from the payloads that the verifier contract returns. Every ledger, and every CLPR Endpoint in between, must therefore produce, carry and accept byte-identical payload encodings. Today that encoding is protobuf, as defined in [`protocol/schema/`](schema/README.md). Protobuf does not guarantee a single encoding of a value, so two codecs can encode the same payload differently, and decoding and re-encoding a payload can change its bytes. The requirement also ties every ledger to one data format, and a payload cannot be translated into a ledger's native format before its hash is checked.
-
-**Current behavior.**
-- Payloads are encoded in protobuf, and each ledger encodes them with its own codec.
-- CLPR Endpoints and verifier contracts carry payloads between the ledgers. [Messaging §3](messaging.md#3-payload-encoding) requires them to pass the bytes through unchanged; a component that decodes and re-encodes a payload in transit can alter them.
-
-**Options.**
-1. A globally unique and canonical format.
-2. `verifyBundle` returns the sequence of payload hashes, so the CLPR Service verifies the running hash without re-encoding.
-3. The verifier contract has a method that translates the payload data after the CLPR Service has verified the running hash.
-4. The starting running hash is passed to the verifier, and the verifier checks the running hash over the source chain's data format.
-
-**Affected modules.** [Messaging §3–4](messaging.md#3-payload-encoding), [Bundle §1](bundle.md#1-bundle-content), [Verifier interface §3](verifier-interface.md#3-verifybundle), [`protocol/schema/`](schema/README.md), the bundle aggregation documents and verifier APIs of each ledger ([Ledgers](../ledgers/README.md)).
-
-## OI-2. What the configuration proof must authenticate
+## OI-1. What the configuration proof must authenticate
 
 **Problem.** When a channel is opened, `verifyConfig` returns the peer's chain id, CLPR Service address, configuration timestamp, throttles, initial trust anchor and trust anchor id, and endpoint manifest ([Verifier interface §2](verifier-interface.md#2-verifyconfig)). The channel stores them as its initial peer state ([Channel setup §5](channel-setup.md#5-initial-peer-state)). The Protocol does not state which of these values the configuration proof must authenticate against the peer ledger's committed state, and which a verifier can accept as supplied. The initial trust anchor raises a further question: a proof can only be checked against an anchor that is already trusted, so unless the verifier fixes the expected anchor itself, the initial anchor is accepted on first use and must be checked out of band.
 
@@ -33,7 +17,7 @@ This document lists known open design questions in v0.2. The modules each issue 
 
 **Affected modules.** [Verifier interface §2](verifier-interface.md#2-verifyconfig), [Channel setup §5](channel-setup.md#5-initial-peer-state), [Ledger configuration §2](ledger-configuration.md#2-ledger-configuration), the configuration proof section of every proof scheme, and each ledger's verifier API.
 
-## OI-3. Configuration proof format for the QBFT epoch scheme
+## OI-2. Configuration proof format for the QBFT epoch scheme
 
 **Problem.** Opening a channel whose verifier uses the [QBFT epoch](../ledgers/besu/proof-schemes/qbft-epoch.md) scheme requires a configuration proof of the Besu ledger. Two incompatible forms exist:
 - a protobuf structure holding the block header that carries the validator set, the ledger configuration, a current block header, and account and storage proofs for the CLPR Service;
@@ -49,7 +33,7 @@ A variant of the first form, with an added epoch length field, is returned by an
 
 **Affected modules.** [QBFT epoch §9](../ledgers/besu/proof-schemes/qbft-epoch.md#9-configuration-and-manifest-proofs), [Verifier interface §2](verifier-interface.md#2-verifyconfig), and, for option 2, the configuration proof section of every proof scheme.
 
-## OI-4. Messages left without replies when a channel cannot drain
+## OI-3. Messages left without replies when a channel cannot drain
 
 **Problem.** A channel PAUSED by a response ordering violation stays PAUSED until the peer corrects its replies, and a channel closed from PAUSED cannot drain until then ([Channel state transitions §5–6](channel-state-transitions.md#5-closing-and-draining)). If the peer never corrects them, or the channel was closed because its verifier is no longer trusted, DATA messages sent on it might never receive a REPLY. Applications cannot learn the outcome of those messages within the protocol, and a connector with messages in flight cannot be removed ([Connector setup §5](connector-setup.md#5-removal)).
 
@@ -62,7 +46,7 @@ A variant of the first form, with an added epoch length field, is returned by an
 
 **Affected modules.** [Channel state transitions](channel-state-transitions.md), [Messaging §7](messaging.md#7-replies), [Connector setup §5](connector-setup.md#5-removal), [CLPR Service §2 and §7](../blueprint/clpr-service.md#2-administration).
 
-## OI-5. Compensation for sending bundles
+## OI-4. Compensation for sending bundles
 
 **Problem.** A CLPR Endpoint is paid only for bundles it submits to its own ledger ([Channel economics §2](../blueprint/channel-economics.md#2-payment-to-the-bundle-submitter)). Building proofs and serving bundles to the peer is unpaid. An endpoint can therefore receive without sending and leave the sending work to others. On a ledger that mostly sends and rarely receives, the margin earned on received messages might not pay for endpoint participation.
 
@@ -74,7 +58,7 @@ A variant of the first form, with an added epoch length field, is returned by an
 
 **Affected modules.** [Channel economics](../blueprint/channel-economics.md), [CLPR Service §5](../blueprint/clpr-service.md#5-bundle-submission), and, for option 2, [Bundle §1](bundle.md#1-bundle-content) and [Endpoint sync](endpoint-sync/README.md).
 
-## OI-6. Calibration of the connector stake
+## OI-5. Calibration of the connector stake
 
 **Problem.** A connector's locked stake has to cover the worst-case losses its messages can cause: on the destination, the execution cost of messages that arrive while it is underfunded; on the source, the penalties for failure replies ([Stakes and bonds §1](../blueprint/stakes-and-bonds.md#1-connector-stake)). If the stake is too small, a connector can authorize a burst of messages that costs endpoints more than slashing recovers. v0.2 sets no method for choosing the minimum stake.
 
@@ -86,7 +70,7 @@ A variant of the first form, with an added epoch length field, is returned by an
 
 **Affected modules.** [Stakes and bonds §1–2](../blueprint/stakes-and-bonds.md#1-connector-stake), [Channel economics §3](../blueprint/channel-economics.md#3-queue-quotas), [Ledger configuration §3](ledger-configuration.md#3-throttles).
 
-## OI-7. QBFT epoch catch-up across a validator change
+## OI-6. QBFT epoch catch-up across a validator change
 
 **Problem.** A bundle of the [QBFT epoch](../ledgers/besu/proof-schemes/qbft-epoch.md) scheme carries at most `maxHeaders` epoch boundary headers ([QBFT epoch §5](../ledgers/besu/proof-schemes/qbft-epoch.md#5-encoding-algorithm)). Its block header must be sealed by a quorum of the validator set listed in the last boundary header it carries, or, with none, of the set in the trust anchor ([QBFT epoch §6](../ledgers/besu/proof-schemes/qbft-epoch.md#6-decode-and-verify-algorithm)). When the peer's trust anchor is more than `maxHeaders` epochs behind and the bundle proves state at the latest block, that block lies in a later epoch than the last boundary header. If the validator set changed in between by more than quorum overlap tolerates, the verifier rejects the bundle and the trust anchor does not advance, so the peer cannot catch up.
 
@@ -99,7 +83,7 @@ A variant of the first form, with an added epoch length field, is returned by an
 
 **Affected modules.** [QBFT epoch §5–7](../ledgers/besu/proof-schemes/qbft-epoch.md#5-encoding-algorithm), [Besu bundle aggregation](../ledgers/besu/bundle-aggregation.md), and, for option 3, [Bundle §1](bundle.md#1-bundle-content) and [Verifier interface §3](verifier-interface.md#3-verifybundle).
 
-## OI-8. Protocol version at channel setup
+## OI-7. Protocol version at channel setup
 
 **Problem.** Both sides of a channel must use the same protocol version ([Ledger configuration §4](ledger-configuration.md#4-protocol-version)). `verifyConfig` does not return the peer's protocol version ([Verifier interface §2](verifier-interface.md#2-verifyconfig)), so a channel can be opened between CLPR Services on different versions. The mismatch is detected only when a ConfigUpdate from the peer arrives and is rejected ([Ledger configuration §5.3](ledger-configuration.md#53-receiving)).
 
@@ -111,7 +95,7 @@ A variant of the first form, with an added epoch length field, is returned by an
 
 **Affected modules.** [Ledger configuration §4](ledger-configuration.md#4-protocol-version), [Verifier interface §2](verifier-interface.md#2-verifyconfig), [Channel setup §5](channel-setup.md#5-initial-peer-state), and each ledger's verifier API.
 
-## OI-9. hinTS and WRAPS verification parameters
+## OI-8. hinTS and WRAPS verification parameters
 
 **Problem.** The hinTS with WRAPS proof scheme describes the signature layout, the encodings of curve points and the checks a verifier performs ([hinTS with WRAPS §4.4](../ledgers/hiero/proof-schemes/hints-wraps.md#44-block-signature) and [§6](../ledgers/hiero/proof-schemes/hints-wraps.md#6-decode-and-verify-algorithm)). It does not give the WRAPS verification key, the Poseidon parameters or the full hinTS verification steps. Without them, a verifier for this scheme cannot be built from the specification alone.
 

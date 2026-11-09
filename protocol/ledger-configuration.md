@@ -58,7 +58,7 @@ The protocol version is a non-negative integer. It increases with every change t
 
 - Both sides of a channel MUST use the same protocol version. Messaging between different protocol versions is not supported.
 - A CLPR Service MUST reject a ConfigUpdate whose `configuration.protocol_version` differs from its own (Section 5.3).
-- `verifyConfig` does not return the peer's protocol version, so channel setup does not check it ([OI-8](open-issues.md#oi-8-protocol-version-at-channel-setup)).
+- `verifyConfig` does not return the peer's protocol version, so channel setup does not check it ([OI-7](open-issues.md#oi-7-protocol-version-at-channel-setup)).
 - A new CONTROL message type is introduced only with a new protocol version ([message types](messaging.md#1-message-types)).
 
 A ledger that changes its protocol version propagates the new configuration to its peers (Section 5). A peer on a different version rejects the bundle that carries it, so messaging on that channel stops.

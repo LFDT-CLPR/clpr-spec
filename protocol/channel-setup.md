@@ -85,7 +85,7 @@ The verifier binding is fixed for the life of the channel; no operation changes 
 
 ## 5. Initial peer state
 
-At `completeChannel`, the CLPR Service sets the channel's view of the peer from the outputs of `verifyConfig`. It MUST take these values only from the values returned by a successful `verifyConfig` call ([verifier interface](verifier-interface.md#2-verifyconfig)). Which of them the configuration proof must authenticate is an open issue ([OI-2](open-issues.md#oi-2-what-the-configuration-proof-must-authenticate)).
+At `completeChannel`, the CLPR Service sets the channel's view of the peer from the outputs of `verifyConfig`. It MUST take these values only from the values returned by a successful `verifyConfig` call ([verifier interface](verifier-interface.md#2-verifyconfig)). Which of them the configuration proof must authenticate is an open issue ([OI-1](open-issues.md#oi-1-what-the-configuration-proof-must-authenticate)).
 
 | Channel state | Initial value |
 |---|---|

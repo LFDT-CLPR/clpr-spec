@@ -56,7 +56,7 @@ The submitter receives no payment in these cases:
 - **A rejected bundle.** The submitter pays its transaction fee ([checks before submitting](clpr-service.md#52-checks-before-submitting)).
 - **A DATA message whose connector does not exist locally.** The submitter absorbs the execution cost. The source connector is slashed when the CONNECTOR_NOT_FOUND reply reaches the source ledger.
 
-An endpoint is not paid for building and sending bundles to the peer ([OI-5](../protocol/open-issues.md#oi-5-compensation-for-sending-bundles)).
+An endpoint is not paid for building and sending bundles to the peer ([OI-4](../protocol/open-issues.md#oi-4-compensation-for-sending-bundles)).
 
 ## 3. Queue quotas
 

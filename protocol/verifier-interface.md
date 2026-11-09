@@ -54,7 +54,7 @@ Obligations. `verifyConfig` MUST fail if:
 - the manifest's `service_address` differs from the returned `service_address`, or a supplied manifest proof yields `version` 0;
 - the trust anchor outputs violate the rule in Section 4.
 
-It MUST NOT fail only because the manifest lists no endpoints. Which of these outputs a configuration proof authenticates is an open question ([OI-2](open-issues.md#oi-2-what-the-configuration-proof-must-authenticate)).
+It MUST NOT fail only because the manifest lists no endpoints. Which of these outputs a configuration proof authenticates is an open question ([OI-1](open-issues.md#oi-1-what-the-configuration-proof-must-authenticate)).
 
 ## 3. verifyBundle
 

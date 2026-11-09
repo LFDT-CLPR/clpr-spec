@@ -206,7 +206,7 @@ When a bundle contains a response ordering violation (Step 9):
 
 While PAUSED, applications cannot send, and queued outbound messages continue to sync to the peer. A bundle with a violation is processed only up to Step 9. The first bundle accepted without a violation returns the channel to ACTIVE (Step 11) and is then processed normally. This requires the peer to correct its outbound queue.
 
-The administrator can close a PAUSED channel ([Blueprint](../blueprint/clpr-service.md#25-closing-a-channel)). It then becomes CLOSING, and it cannot drain until the peer's REPLY messages arrive in order. DATA messages on a channel that never drains remain without a REPLY ([OI-4](open-issues.md#oi-4-messages-left-without-replies-when-a-channel-cannot-drain)).
+The administrator can close a PAUSED channel ([Blueprint](../blueprint/clpr-service.md#25-closing-a-channel)). It then becomes CLOSING, and it cannot drain until the peer's REPLY messages arrive in order. DATA messages on a channel that never drains remain without a REPLY ([OI-3](open-issues.md#oi-3-messages-left-without-replies-when-a-channel-cannot-drain)).
 
 ## History
 

@@ -12,7 +12,14 @@ The `.proto` files in this directory are the normative encodings of the data tha
 - Receivers apply [strict decoding](../conventions.md#3-abstract-data-structures).
 - Field numbers, field types and enum values are fixed. Deprecated fields and values remain part of the wire format; receivers handle them as [strict decoding](../conventions.md#3-abstract-data-structures) states.
 - Message names, enum names and the package name `clpr.v0_2` are not wire-visible. Implementations MAY use other names.
-- The running hash covers the serialized bytes of each message payload ([running hash](../messaging.md#4-running-hash)). Which bytes count when a payload has more than one valid encoding is an open issue, [OI-1](../open-issues.md#oi-1-message-encoding-in-the-running-hash).
+- **Canonical encoding.** A message payload (`ClprMessagePayload` and every message it contains, including the `ClprLedgerConfiguration` of a ConfigUpdate) MUST be serialized in the canonical encoding:
+  - fields appear in ascending field-number order; a non-repeated field appears at most once, and a repeated field has one record per element, in list order;
+  - a scalar, `bytes`, `string` or enum field that holds its default value (zero, empty, or the enum value 0) is omitted;
+  - a message-typed field, and the selected member of a `oneof`, is present exactly when it is set, even if its content is empty;
+  - every varint, including tags and length prefixes, uses the fewest bytes;
+  - no unknown fields appear.
+
+  The running hash covers these bytes ([payload encoding](../messaging.md#3-payload-encoding), [running hash](../messaging.md#4-running-hash)). A payload therefore has exactly one valid encoding, and any ledger can recompute the running hash from the decoded payload.
 
 ## 3. Files
 

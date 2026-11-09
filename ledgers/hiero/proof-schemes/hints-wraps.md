@@ -35,7 +35,7 @@ Each item is a leaf of the ledger's state tree. A SHA-384 Merkle path links each
 - forge a WRAPS proof, by corrupting the chain of roster changes from the genesis roster or by breaking the proof system;
 - break SHA-384, or the hinTS or WRAPS cryptographic assumptions.
 
-The [configuration proof](#9-configuration-and-manifest-proofs) is verified against a ledger id that the verifier holds independently of the proof. Which configuration values it must authenticate is open issue [OI-2](../../../protocol/open-issues.md#oi-2-what-the-configuration-proof-must-authenticate).
+The [configuration proof](#9-configuration-and-manifest-proofs) is verified against a ledger id that the verifier holds independently of the proof. Which configuration values it must authenticate is open issue [OI-1](../../../protocol/open-issues.md#oi-1-what-the-configuration-proof-must-authenticate).
 
 ## 3. Proof material
 
@@ -264,7 +264,7 @@ The pseudocode uses these functions:
   - the aggregate BLS signature is valid for `root` under the aggregate public key, hashing to G2 with the domain tag `BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_`.
 - `WrapsVerify(wp, ledger_id, vk)` verifies the WRAPS proof under the scheme's fixed WRAPS verification key, and requires `z_0[0] = le(ledger_id)` and `z_i[1] = Poseidon(vk)`.
 
-The full hinTS and WRAPS verification parameters (the WRAPS verification key, the Poseidon parameters and the full hinTS verification steps) are not yet specified in this revision ([OI-9](../../../protocol/open-issues.md#oi-9-hints-and-wraps-verification-parameters)).
+The full hinTS and WRAPS verification parameters (the WRAPS verification key, the Poseidon parameters and the full hinTS verification steps) are not yet specified in this revision ([OI-8](../../../protocol/open-issues.md#oi-8-hints-and-wraps-verification-parameters)).
 
 ```
 function PathRoot(path) → root:
