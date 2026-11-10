@@ -1,0 +1,18 @@
+# Consistent with MAINTAINERS.md. Editors give final approval on specification text;
+# governance and process files require a Maintainer (CLIP-0001, Sections 2 and 5.2).
+
+*                    @edward-swirldslabs @jasuwienas @Neeharika-Sompalli @lukasz-hashgraph @Reccetech
+
+/clips/clip-0001.md  @edward-swirldslabs
+/LICENSE.md          @edward-swirldslabs
+/SCOPE.md            @edward-swirldslabs
+/NOTICES.md          @edward-swirldslabs
+/GOVERNANCE.md       @edward-swirldslabs
+/CONTRIBUTING.md     @edward-swirldslabs
+/CODE_OF_CONDUCT.md  @edward-swirldslabs
+/MAINTAINERS.md      @edward-swirldslabs
+/.github/            @edward-swirldslabs
+/AGENTS.md           @edward-swirldslabs
+/CLAUDE.md           @edward-swirldslabs
+/.claude/            @edward-swirldslabs
+/tools/              @edward-swirldslabs

@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+
+package clpr.v0_2;
+
+// Status of a channel. Meaning: protocol/channel-state-transitions.md §1.
+enum ClprChannelStatus {
+  PENDING = 0;
+  ACTIVE = 1;
+  PAUSED = 2;
+  CLOSING = 3;
+  DRAINED = 4;
+  CLOSED = 5;
+}

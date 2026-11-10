@@ -1534,8 +1534,7 @@ insufficient to incentivize endpoint participation.
 ## 3.4 Application Layer
 
 > 💡 **Note:** This section is a placeholder. The interaction patterns below are outlined at a high level. Detailed
-> application-layer specifications will be developed as specific use cases (e.g., HashDEX cross-ledger settlement, HTS
-> asset bridging) are designed.
+> application-layer specifications will be developed as specific use cases.
 
 CLPR supports multiple interaction patterns at the application layer, built on top of the general messaging primitive.
 

@@ -1,0 +1,49 @@
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+
+// The package name is part of the gRPC method path /proto.ClprEndpointService/sync.
+package proto;
+
+import "protocol/schema/clpr_channel_status.proto";
+
+// The endpoint sync service. Behavior: protocol/endpoint-sync/README.md.
+service ClprEndpointService {
+  // One stream is one sync cycle for one channel.
+  rpc sync(stream ClprSyncPayload) returns (stream ClprSyncPayload);
+}
+
+// One message of a sync stream.
+message ClprSyncPayload {
+  // 32-byte channel id. Set on every message of the stream.
+  bytes channel_id = 1;
+
+  // The sending side's request: its own channel state. Present only in each
+  // side's first message.
+  BundleRequest bundle_request = 2;
+
+  // A bundle for the peer. Absent when the message carries no bundle.
+  BundleResponse bundle_response = 3;
+}
+
+// The requestor's own channel state. Unproven.
+message BundleRequest {
+  // The requestor's received_message_id.
+  uint64 current_received_message_id = 1;
+
+  // The requestor's channel status.
+  clpr.v0_2.ClprChannelStatus current_status = 2;
+
+  // Id of the trust anchor that the requestor's ledger stores for the other
+  // side's ledger.
+  bytes current_trust_anchor_id = 3;
+
+  // The version of the other side's endpoint manifest held by the requestor.
+  uint64 current_endpoint_manifest_version = 4;
+}
+
+// A bundle for the receiving ledger's verifier contract.
+message BundleResponse {
+  // The bundle, in the wire layout of the sending ledger's proof scheme.
+  // Empty means no bundle.
+  bytes bundle_payload = 1;
+}

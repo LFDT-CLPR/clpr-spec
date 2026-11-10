@@ -1,0 +1,38 @@
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+
+package clpr.v0_2;
+
+// An endpoint that serves endpoint sync for a CLPR Service.
+// Meaning: protocol/endpoint-manifest.md §1.
+message ClprEndpoint {
+  // Network address and port. Optional.
+  ClprServiceEndpoint service_endpoint = 1;
+
+  // DER-encoded certificate. Optional.
+  bytes tls_certificate = 2;
+
+  // Account of the endpoint operator, in the ledger's own format. Optional.
+  bytes account_id = 3;
+}
+
+// Network address of an endpoint. Meaning and constraints:
+// protocol/endpoint-manifest.md §1.
+message ClprServiceEndpoint {
+  // Numeric IPv4 or IPv6 address. Not a DNS host name.
+  string ip_address = 1;
+
+  uint32 port = 2;
+}
+
+// The endpoint set of a CLPR Service. Meaning: protocol/endpoint-manifest.md §2.
+message ClprEndpointManifest {
+  // Manifest version; at least 1.
+  uint64 version = 1;
+
+  // On-ledger address of the CLPR Service the manifest belongs to.
+  bytes service_address = 2;
+
+  // Current endpoint set. May be empty.
+  repeated ClprEndpoint endpoints = 3;
+}
