@@ -14,7 +14,7 @@ A **channel id** is a 32-byte value, chosen by the registrant (for example at ra
 
 ## 2. Registration
 
-A channel is registered on each ledger in two phases, commit and reveal. The commit phase reserves the channel on both ledgers without revealing the channel id or the key; the reveal phase creates the channel. Registration is open to any caller.
+A channel is registered on each ledger in two phases, commit and reveal. The commit phase reserves the channel on both ledgers without revealing the channel id or the key; the reveal phase creates the channel. Registration is open to any caller. The registrant has no authority over the channel once it exists: its key serves only to coordinate registration across the two ledgers, and on EVM ledgers to derive the channel id.
 
 The **ownership commitment** binds a channel id to the registrant's key on one ledger:
 

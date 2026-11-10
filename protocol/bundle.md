@@ -37,7 +37,7 @@ A bundle with no messages is valid. It can carry only an acknowledgement, a stat
 
 Informational fields MUST NOT cause a change of state at the destination. They inform the destination's endpoints.
 
-The id of the trust anchor that the source holds for the destination is not part of queue metadata. Endpoints report it, unproven, in their sync requests ([exchange](endpoint-sync/README.md#31-messages)). A proof scheme MAY prove it, but a verifier does not return it.
+The id of the trust anchor that the source holds for the destination is informational. It has no field in the queue metadata above, but the wire encoding keeps it as field 6 of `ClprQueueMetadata` ([schema](schema/clpr_bundle_content.proto)). Endpoints report it, unproven, in their sync requests ([exchange](endpoint-sync/README.md#31-messages)). A proof scheme MAY prove it. A verifier need not return it, and like the other informational fields it does not change state at the destination.
 
 The queue counters these fields report are defined in [messaging](messaging.md#2-message-identifiers-and-queue).
 

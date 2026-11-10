@@ -50,6 +50,8 @@ Constraints on a ledger's own configuration:
 - `max_messages_per_bundle`, `max_message_payload_bytes`, `max_gas_per_message`, `max_queue_depth` and `max_sync_bytes` MUST be greater than zero.
 - `max_sync_bytes` MUST be greater than `max_message_payload_bytes` plus the overhead of delivering one message: proof material, queue metadata and message framing. Otherwise a message of the maximum size can never be delivered and the channel stops. The overhead depends on the proof scheme.
 
+Limits are published so that a peer is never penalized for a reason it cannot determine from the published configuration.
+
 Default values are deployment choices ([Blueprint](../blueprint/clpr-service.md#4-configuration-parameters)).
 
 ## 4. Protocol version
@@ -81,7 +83,7 @@ A ConfigUpdate does not carry endpoint manifest changes; those travel in bundles
 
 Each channel records `last_config_timestamp`: the `timestamp` of the last configuration propagated on it. It is set to the consensus time of channel creation. A ConfigUpdate is **due** on a channel when its `last_config_timestamp` is less than the current configuration's `timestamp`.
 
-- The CLPR Service MUST NOT enqueue a ConfigUpdate on a channel that is not ACTIVE.
+- The CLPR Service MUST NOT enqueue a ConfigUpdate on a channel that is not ACTIVE. A PAUSED channel that a bundle resumes (Step 11 of [bundle processing](channel-state-transitions.md#2-bundle-processing)) is ACTIVE again at Step 12, so a due ConfigUpdate is enqueued in that bundle.
 - When an application sends a DATA message on an ACTIVE channel on which a ConfigUpdate is due, the CLPR Service MUST enqueue the ConfigUpdate before the DATA message ([enqueue](messaging.md#5-enqueue) step 1).
 - When the CLPR Service processes a bundle on a channel on which a ConfigUpdate is due, and the channel is ACTIVE at Step 12 of [bundle processing](channel-state-transitions.md#2-bundle-processing), it MUST enqueue the ConfigUpdate at that step.
 - When it enqueues a ConfigUpdate, the CLPR Service sets the channel's `last_config_timestamp` to the configuration's `timestamp`.

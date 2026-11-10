@@ -14,6 +14,8 @@ This document defines how Hiero takes part in CLPR: its identity, its verifier A
 
 A Hiero ledger hosts exactly one CLPR Service, at the address above. The ledger id therefore identifies both the ledger and its CLPR Service. It is the trust anchor of the [`hints-wraps`](proof-schemes/hints-wraps.md) proof scheme.
 
+Every consensus node of a Hiero ledger is a CLPR Endpoint. The ledger's endpoint manifest is derived from its node roster, with no administrator operations ([roster-derived manifest](../../blueprint/clpr-service.md#33-roster-derived-manifest)). It is created at version 1 with no endpoints and is filled as the nodes publish their endpoints.
+
 ## 2. Verifier API
 
 The Hiero CLPR Service calls verifier contracts through the [Hiero Verifier API](verifier-api.md). Every verifier contract used on a Hiero ledger, built-in or deployed, implements it.

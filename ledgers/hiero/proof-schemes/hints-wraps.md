@@ -373,7 +373,7 @@ The verifier API of the destination ledger defines how this content is returned:
 | Trust anchor | The 32-byte ledger id of the peer ledger |
 | Trust anchor id | The ledger id |
 | Set | At channel setup: the ledger id against which the configuration proof was verified ([§9](#9-configuration-and-manifest-proofs)) |
-| Changes | Never. The ledger id is fixed, and the WRAPS proof in each signature covers roster changes. |
+| Changes | Never. The ledger id is fixed, and the WRAPS proof in each signature covers roster changes. This scheme defines no ledger-id succession. |
 
 A verifier of this scheme reports no trust anchor change. Except for the trust anchor update below, `new_trust_anchor` and `new_trust_anchor_id` are empty.
 

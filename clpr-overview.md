@@ -102,6 +102,7 @@ The normative content is in three categories, defined in [CLIP-0001 §3](clips/c
 | Connector stakes and slashing | [blueprint/stakes-and-bonds.md](blueprint/stakes-and-bonds.md) |
 | Execution charges and queue quotas | [blueprint/channel-economics.md](blueprint/channel-economics.md) |
 | Versions and how the specification changes | [clips/clip-0001.md](clips/clip-0001.md) |
+| Design rationale of v0.2 (design document and ADRs of the EAP v0.2 text) | [archive/eap-v0.2-source/](archive/eap-v0.2-source/README.md) |
 
 ## 7. Vocabulary
 

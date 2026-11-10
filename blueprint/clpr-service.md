@@ -205,7 +205,7 @@ A change in node weights alone does not change the manifest. A misbehaving node 
 
 ### 4.1 Throttles
 
-The meaning of each throttle is defined in [throttles](../protocol/ledger-configuration.md#3-throttles). Recommended defaults:
+The meaning of each throttle is defined in [throttles](../protocol/ledger-configuration.md#3-throttles). The recommended defaults below are the values the v0.2 implementations use; the EAP v0.2 text left defaults to be determined.
 
 | Throttle | Hiero | EVM ledgers |
 |---|---|---|
@@ -217,11 +217,13 @@ The meaning of each throttle is defined in [throttles](../protocol/ledger-config
 | `max_local_endpoints` | 0 (no limit) | 0 (no limit) |
 | `max_peer_endpoints` | 0 (no limit) | 0 (no limit) |
 
+A safe rule of thumb is `max_sync_bytes ≥ max_message_payload_bytes × max_messages_per_bundle + proof overhead`. If a bundle that carries a manifest proof is larger than the peer's `max_sync_bytes`, the peer's administrator can raise `max_sync_bytes`, or the local administrator can lower `max_local_endpoints`.
+
 `max_messages_per_bundle` SHOULD be small enough that a full bundle fits the ledger's transaction size and execution limits ([§5.4](#54-bundle-size-for-evm-receivers-of-hiero-bundles)).
 
 ### 4.2 Service parameters
 
-Amounts are in the ledger's smallest currency unit: 10⁻⁸ of a whole token on Hiero, and wei on EVM ledgers. "—" means the parameter does not exist on that ledger. Parameter names are informative; each ledger binds its own.
+The defaults below are the values the v0.2 implementations use. Amounts are in the ledger's smallest currency unit: 10⁻⁸ of a whole token on Hiero, and wei on EVM ledgers. "—" means the parameter does not exist on that ledger. Parameter names are informative; each ledger binds its own.
 
 | Parameter | Hiero | EVM ledgers | Meaning |
 |---|---|---|---|

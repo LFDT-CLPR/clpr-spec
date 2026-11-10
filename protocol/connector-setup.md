@@ -91,7 +91,7 @@ An application that sends a DATA message names the channel and the connector ([e
 It returns one boolean, `authorized`.
 
 - The CLPR Service MUST reject the send unless the call returns true. A failed call is treated as a rejection.
-- The connector MAY apply any authorization logic, for example allow-lists or payment requirements. Whether it can change its own state during the call is ledger-specific.
+- The connector MAY apply any authorization logic, for example allow-lists or payment requirements. Whether it can change its own state during the call is ledger-specific; on Hiero it cannot ([Hiero](../ledgers/hiero/README.md#6-application-and-connector-interfaces)).
 - The call MUST NOT modify CLPR Service state.
 - By returning true, the connector commits that its counterpart on the destination ledger can pay for executing the message, and that it can itself cover the cost of handling the reply. This commitment is the basis for slashing ([Blueprint](../blueprint/stakes-and-bonds.md#2-slashing-and-bans)).
 

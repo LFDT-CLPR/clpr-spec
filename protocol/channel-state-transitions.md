@@ -85,7 +85,9 @@ if md.received_message_id < C.acked_message_id
 
 // Step 9. Response ordering
 if new violates response ordering then
+    // On a CLOSING or DRAINED channel the Service MAY instead reject the bundle (Section 6).
     if C.status = ACTIVE then C.status := PAUSED
+    // The Service MAY apply Step 10 before returning (Section 6).
     return                                   // no message is processed (Section 6)
 
 // Step 10. Acknowledgement
