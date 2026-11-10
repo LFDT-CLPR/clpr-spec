@@ -73,7 +73,7 @@ Recommendations for applications and deployments are in [CLPR Service §6](bluep
 | **Endpoint operator** | Runs CLPR Endpoints, which sync with peers and submit bundles | Serves all channels of its ledger | Pays transaction fees; earns the margin on executed messages |
 | **CLPR Service administrator** | Configures the CLPR Service, admits endpoints where admission is curated, closes channels | Acts when a channel is compromised | None |
 
-On Hiero, every consensus node is a CLPR Endpoint. On EVM ledgers, endpoints register with a bond and are admitted by the administrator. The administrator cannot open channels or register connectors. Charges and penalties go to the bundle submitter ([Channel economics §2](blueprint/channel-economics.md#2-payment-to-the-bundle-submitter)).
+On Hiero, every consensus node is a CLPR Endpoint. On EVM ledgers, endpoints register and are admitted by the administrator. Endpoints are neither bonded nor slashed. The administrator cannot open channels or register connectors. Charges and penalties go to the bundle submitter ([Channel economics §2](blueprint/channel-economics.md#2-payment-to-the-bundle-submitter)).
 
 Each role vets those it depends on, in proportion to the value it puts at risk. To open a route, a verifier developer publishes a verifier; a connector operator vets it, opens the channel and registers a connector on both ledgers; an application developer vets the channel and connector. To withdraw, a connector operator stops authorizing messages, waits until its messages in flight are answered, and removes the connector on both ledgers ([Connector setup §5](protocol/connector-setup.md#5-removal)).
 
@@ -99,7 +99,7 @@ The normative content is in three categories, defined in [CLIP-0001 §3](clips/c
 | Known open design questions | [protocol/open-issues.md](protocol/open-issues.md) |
 | Ledgers, verifier APIs and proof schemes | [ledgers/](ledgers/README.md) |
 | CLPR Service design and administration | [blueprint/clpr-service.md](blueprint/clpr-service.md) |
-| Connector stakes, slashing, endpoint bonds | [blueprint/stakes-and-bonds.md](blueprint/stakes-and-bonds.md) |
+| Connector stakes and slashing | [blueprint/stakes-and-bonds.md](blueprint/stakes-and-bonds.md) |
 | Execution charges and queue quotas | [blueprint/channel-economics.md](blueprint/channel-economics.md) |
 | Versions and how the specification changes | [clips/clip-0001.md](clips/clip-0001.md) |
 
@@ -136,6 +136,6 @@ Terms other than the [major parts](#2-major-parts):
 
 ## 8. Application patterns
 
-Applications are asynchronous: a send returns before the destination executes, and the outcome arrives later as a reply. When several channels connect the same ledgers, for example with verifiers that accept different finality, the application chooses one at send time. Lower finality gives lower latency and a risk of reorganization; CLPR sets no default ([§4](#4-trust-model)).
+Applications are asynchronous: a send returns before the destination executes, and the outcome arrives later as a reply. When several channels connect the same ledgers, for example with verifiers that accept different finality, the application chooses one at send time. Lower finality gives lower latency and a risk of reorganization. The specification recommends final or safe state; a channel whose verifier accepts anything earlier is used at its users' own risk ([§4](#4-trust-model), [proof requirements](protocol/bundle.md#4-proof-requirements)).
 
 Patterns built on CLPR messages include remote contract calls through proxy contracts; escrow, mint, then burn; and two-phase commit across ledgers.

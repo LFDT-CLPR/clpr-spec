@@ -63,7 +63,9 @@ A proof scheme defines how the abstract bundle content is proven ([CLIP-0001 §3
 3. **Endpoint manifest:** when present, the source CLPR Service's endpoint manifest, bound to `ctx.service_address` ([manifest proofs](endpoint-manifest.md#5-manifest-proofs)).
 4. **Trust anchor change:** when the bundle makes a trust anchor change, a commitment to the new trust anchor, proven under the current trust anchor ([trust anchor changes](verifier-interface.md#4-trust-anchor-changes)).
 
-Items 1 to 3 MUST be proven from one state of the source ledger, and that state MUST be final under the scheme's trust model.
+Items 1 to 3 MUST be proven from one state of the source ledger.
+
+The commitment level at which a verifier accepts that state is the verifier's choice. It can be final, safe, or an earlier and faster level, so channels with different latency and risk can connect the same ledgers. A verifier SHOULD accept only final or safe state. A channel whose verifier accepts state earlier than safe does so at its users' own risk: the proven state can be reverted after its messages are delivered.
 
 A verifier MUST verify items 1 to 4 as they apply. The messages before the last one are bound by the running hash: the destination recomputes the chain over them and compares it with the proven `last_message_running_hash` ([running hash](messaging.md#4-running-hash)). A proof scheme MAY therefore omit individual proofs for them. If a scheme includes such proofs, a verifier MAY check them.
 

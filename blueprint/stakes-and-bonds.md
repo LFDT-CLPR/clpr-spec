@@ -2,7 +2,7 @@
 
 > **Category:** Blueprint (SHOULD)
 
-This document describes the recommended design of the stake that a connector locks against misbehavior, the slashing of that stake, and the bond an endpoint posts at registration. Stakes and bonds are local to each ledger and never cross the wire. Parameter defaults are listed in the [Service parameters](clpr-service.md#42-service-parameters).
+This document describes the recommended design of the stake that a connector locks against misbehavior, and the slashing of that stake. Endpoints are not bonded ([§3](#3-endpoints)). Stakes are local to each ledger and never cross the wire. Parameter defaults are listed in the [Service parameters](clpr-service.md#42-service-parameters).
 
 ## 1. Connector stake
 
@@ -65,13 +65,6 @@ The penalty is paid to the submitter of the bundle being processed. This is the 
 
 On Hiero, the penalty is paid from the escrow account and capped at that account's balance.
 
-## 3. Endpoint bond
+## 3. Endpoints
 
-On a ledger with endpoint registration ([registration and admission](clpr-service.md#32-registration-and-admission)), each registering endpoint posts a **bond**. The bond makes throwaway registrations costly. It is a signal of commitment, not a security deposit sized against attacks.
-
-- The bond SHOULD be at least `minEndpointBond`.
-- The Service is the bond's sole custodian. It SHOULD return the bond in full when the endpoint leaves, by any path: self-removal, administrator removal, or rejection of a pending registration.
-- Endpoint bonds are never slashed. A misbehaving endpoint is removed, and its bond is refunded. Slashing applies only to connectors.
-- The bond plays no part in bundle submission or in the payment of submitters.
-
-On EVM ledgers, a returned bond is credited to the registrant's pending withdrawals, which the registrant collects with `collectPending`. Hiero has no endpoint bond, because its manifest is derived from the node roster ([roster-derived manifest](clpr-service.md#33-roster-derived-manifest)).
+Endpoints are neither bonded nor slashed. Stakes and slashing apply only to connectors. A misbehaving endpoint is removed from the manifest: by the administrator on a ledger with endpoint registration ([registration and admission](clpr-service.md#32-registration-and-admission)), or through the ledger's governance of its roster on a ledger whose manifest is derived from the node roster ([roster-derived manifest](clpr-service.md#33-roster-derived-manifest)).

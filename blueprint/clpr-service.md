@@ -19,7 +19,7 @@ A CLPR Service SHOULD keep the following stores. Their physical layout is define
 | Connector commitments | commitment | Registered connector commitments ([connector registration](../protocol/connector-setup.md#2-registration)) |
 | Connectors | (channel id, connector id) | Connector records and counters ([§1.3](#13-connector-record-and-counters)) |
 
-Connector, stake, and bond data never cross the wire. Amounts are `uint64` on Hiero and `uint256` on EVM ledgers.
+Connector and stake data never cross the wire. Amounts are `uint64` on Hiero and `uint256` on EVM ledgers.
 
 On EVM ledgers, the Service also keeps pending withdrawals, keyed by account ([payment flow](channel-economics.md#2-payment-to-the-bundle-submitter)). On Hiero, it also keeps the state of an open manifest construction ([§3.3](#33-roster-derived-manifest)).
 
@@ -170,23 +170,22 @@ This section covers how endpoints enter and leave the [local manifest](../protoc
 
 ### 3.2 Registration and admission
 
-Ledgers where any party can offer an endpoint, such as EVM ledgers, SHOULD use a two-step model. An endpoint registers with a bond, and the administrator admits it.
+Ledgers where any party can offer an endpoint, such as EVM ledgers, SHOULD use a two-step model. An endpoint registers, and the administrator admits it. Endpoints are not bonded ([endpoints](stakes-and-bonds.md#3-endpoints)).
 
 The Service keeps one entry per registrant account:
 
 | Field | Meaning |
 |---|---|
 | `endpoint` | The endpoint data ([endpoint](../protocol/endpoint-manifest.md#1-endpoint)) |
-| `bond` | The bond posted at registration ([endpoint bond](stakes-and-bonds.md#3-endpoint-bond)) |
 | `status` | `PENDING` (registered) or `LIVE` (admitted) |
 
-The registrant account is the caller of `registerEndpoint`. It is unique among entries and receives the bond refund. It need not be the account that submits bundles.
+The registrant account is the caller of `registerEndpoint`. It is unique among entries. It need not be the account that submits bundles.
 
 | Operation | Caller | Effect | Version |
 |---|---|---|---|
-| `registerEndpoint(endpoint)` with bond | any | Creates a PENDING entry and holds the bond. Rejected if an entry exists or the bond is below `minEndpointBond`. The Service MAY validate the endpoint data, for example the certificate check of the [EVM family](../ledgers/evm/README.md#6-endpoint-certificates) | Unchanged |
-| `addEndpoint(registrant, endpoint)` | administrator | Promotes a PENDING entry, using its registered data. With no entry, adds `endpoint` directly with no bond. Rejected if the entry is already LIVE or the manifest is full | +1 |
-| `removeEndpoint(registrant)` | registrant or administrator | Removes the entry and returns the bond in full | +1 if the entry was LIVE |
+| `registerEndpoint(endpoint)` | any | Creates a PENDING entry. Rejected if an entry exists. The Service MAY validate the endpoint data, for example the certificate check of the [EVM family](../ledgers/evm/README.md#6-endpoint-certificates) | Unchanged |
+| `addEndpoint(registrant, endpoint)` | administrator | Promotes a PENDING entry, using its registered data. With no entry, adds `endpoint` directly. Rejected if the entry is already LIVE or the manifest is full | +1 |
+| `removeEndpoint(registrant)` | registrant or administrator | Removes the entry | +1 if the entry was LIVE |
 | `updateEndpointManifest(add, remove)` | administrator | Applies a batch atomically. Removals come first and skip unknown accounts. Additions follow `addEndpoint` and skip entries already LIVE. Rejected if the result would exceed `max_local_endpoints` | +1 once, if anything changed |
 
 ### 3.3 Roster-derived manifest
@@ -234,12 +233,10 @@ Amounts are in the ledger's smallest currency unit: 10⁻⁸ of a whole token on
 | `messageExecutionCost` | 1,000,000 | — (not used) | Flat execution charge per DATA message ([execution charges](channel-economics.md#1-execution-charges)) |
 | `endpointMarginPercent` | 10 | 10 | Margin added to execution charges |
 | `connectorQueueQuotaPct` | 50 | 50 (below 100) | Per-connector share of `max_queue_depth` ([queue quotas](channel-economics.md#3-queue-quotas)) |
-| `minEndpointBond` | — | 0 | Minimum endpoint bond ([endpoint bond](stakes-and-bonds.md#3-endpoint-bond)) |
 | `connectorPaymentGasLimit` | — | 200,000 (minimum 50,000) | Gas for the connector's payment call |
 | `connectorInboundGasStipend` | — | 500,000 | Gas for the connector's inbound-message notification ([§6.4](#64-reentrancy-and-external-calls)) |
 | `maxChannels`, `maxConnectors` | — | 0 (no limit) | Caps on channel and connector counts |
 | `verifierGasLimit` | 300,000 | all available gas | Gas given to a verifier call |
-| `endpointMisbehaviorPenalty` | 5,000,000 | — | Penalty on a rejected bundle ([§5.2](#52-checks-before-submitting)) |
 | `manifestGracePeriod` | 300 s | — | Construction deadline ([§3.3](#33-roster-derived-manifest)) |
 | `manifestGraceExtension` | 300 s | — | Length of each extension |
 | `manifestMaxGraceExtensions` | 2 | — | Maximum number of extensions |
@@ -261,16 +258,13 @@ An endpoint SHOULD NOT submit a bundle that the Service would reject. A rejected
 - **Progress.** The endpoint SHOULD evaluate the [progress criteria](../protocol/channel-state-transitions.md#3-progress) against its last known view of the destination channel: the received message id, the trust anchor id, and the manifest version the peer reported. If no criterion holds, it does not submit.
 - **Verification.** The endpoint SHOULD check that the bundle verifies and processes before submitting it, for example by a read-only preview of the submission.
 
-On Hiero, the receiving node submits without verifying the bundle; the sending node verifies its own proof before sending. A rejected bundle also costs the submitting node `endpointMisbehaviorPenalty`. When a node sends nothing is defined in [Hiero bundle aggregation §5](../ledgers/hiero/bundle-aggregation.md#5-when-nothing-is-sent).
+On Hiero, the receiving node submits without verifying the bundle; the sending node verifies its own proof before sending. When a node sends nothing is defined in [Hiero bundle aggregation §5](../ledgers/hiero/bundle-aggregation.md#5-when-nothing-is-sent).
 
 On EVM ledgers, the endpoint previews every submission against pending state and skips any bundle that would revert.
 
 ### 5.3 Peer selection
 
-An endpoint SHOULD choose sync peers from the peer manifest at random, weighted toward peers that have delivered useful bundles. It SHOULD prefer peers that reciprocate.
-
-- On Hiero, the weight is a reputation score that decays over time.
-- On EVM ledgers, the weight is the number of past successes plus 1, with backoff per peer.
+An endpoint SHOULD choose sync peers from the peer manifest at random, weighted toward peers that have delivered useful bundles. It SHOULD prefer peers that reciprocate. The weighting is the endpoint's own local choice; the Service keeps no endpoint reputation.
 
 ### 5.4 Bundle size for EVM receivers of Hiero bundles
 
@@ -288,11 +282,11 @@ Channel creation is permissionless, and there is no allow-list of verifiers. A m
 
 ### 6.2 Finality
 
-For a peer ledger without instant finality, a verifier SHOULD accept only finalized state. How an endpoint reads state is set by each ledger's bundle aggregation (for example, [Besu state read and finality](../ledgers/besu/bundle-aggregation.md#2-state-read-and-finality)).
+For a peer ledger without instant finality, a verifier SHOULD accept only final or safe state ([proof requirements](../protocol/bundle.md#4-proof-requirements)). A verifier MAY accept earlier state for lower latency; the channel's users then bear the risk that the state is reverted. How an endpoint reads state is set by each ledger's bundle aggregation (for example, [Besu state read and finality](../ledgers/besu/bundle-aggregation.md#2-state-read-and-finality)).
 
 ### 6.3 Endpoint admission
 
-On ledgers with endpoint registration, the defense against Sybil endpoints is administrator curation ([§3.2](#32-registration-and-admission)). The bond only adds friction ([endpoint bond](stakes-and-bonds.md#3-endpoint-bond)), and the Service keeps no endpoint reputation. The administrator MAY evict misbehaving endpoints ([§3.2](#32-registration-and-admission)), and the transaction fee deters the submission of stale manifest bundles. Curation places full trust in the administrator, including trust that it will not empty the manifest. Endpoints SHOULD randomize peer selection ([§5.3](#53-peer-selection)).
+On ledgers with endpoint registration, the defense against Sybil endpoints is administrator curation ([§3.2](#32-registration-and-admission)). Endpoints are not bonded or slashed ([endpoints](stakes-and-bonds.md#3-endpoints)), and the Service keeps no endpoint reputation. The administrator MAY evict misbehaving endpoints ([§3.2](#32-registration-and-admission)), and the transaction fee deters the submission of stale manifest bundles. Curation places full trust in the administrator, including trust that it will not empty the manifest. Endpoints SHOULD randomize peer selection ([§5.3](#53-peer-selection)).
 
 ### 6.4 Reentrancy and external calls
 

@@ -16,6 +16,7 @@ This record accounts for every item of the EAP v0.2 specification text (archived
 | `archived` | Rationale, history or a superseded design; it remains only in `archive/`. |
 | `dropped: not implemented` | Not implemented in v0.2, and therefore not carried. |
 | `removed: reference only` | The text only named a product; nothing is carried. |
+| `dropped: Maintainer decision` | Deliberately not carried; the Location gives the replacing rule. |
 
 ## `clpr-service-spec.md`
 
@@ -162,7 +163,7 @@ This record accounts for every item of the EAP v0.2 specification text (archived
 | 124 | Connector must be registered on both ledgers | specified | [protocol/connector-setup.md §3](../../protocol/connector-setup.md#3-connectors-on-both-ledgers) |
 | 125 | Connector and channel relationship is many-to-many | specified | [protocol/connector-setup.md §1](../../protocol/connector-setup.md#1-connector-identity) |
 | | **[2.3 Endpoint Bond](../eap-v0.2-source/clpr-service-spec.md#23-endpoint-bond)** | | |
-| 126 | Endpoint bond on permissionless ledgers | blueprint | [blueprint/stakes-and-bonds.md §3](../../blueprint/stakes-and-bonds.md#3-endpoint-bond) |
+| 126 | Endpoint bond on permissionless ledgers | dropped: Maintainer decision | Endpoints are not bonded: [blueprint/stakes-and-bonds.md §3](../../blueprint/stakes-and-bonds.md#3-endpoints); [implementation discrepancies A-53](implementation-discrepancies.md) |
 | | **[2.4 Endpoint Manifest](../eap-v0.2-source/clpr-service-spec.md#24-endpoint-manifest)** | | |
 | 127 | Local manifest kept by the Service; each channel caches the peer's | specified | [protocol/endpoint-manifest.md §3](../../protocol/endpoint-manifest.md#3-local-manifest) |
 | | **[2.4.1 Local Endpoint Manifest](../eap-v0.2-source/clpr-service-spec.md#241-local-endpoint-manifest)** | | |
@@ -341,10 +342,10 @@ This record accounts for every item of the EAP v0.2 specification text (archived
 | | **[6.5 Endpoint Management](../eap-v0.2-source/clpr-service-spec.md#65-endpoint-management)** | | |
 | 269 | Endpoint-management operations on permissionless ledgers | blueprint | [blueprint/clpr-service.md §3.2](../../blueprint/clpr-service.md#32-registration-and-admission), [§3.3](../../blueprint/clpr-service.md#33-roster-derived-manifest) |
 | 270 | Optional endpoint certificate validation | specified | [protocol/endpoint-manifest.md §1](../../protocol/endpoint-manifest.md#1-endpoint); [ledgers/evm/README.md §6](../../ledgers/evm/README.md#6-endpoint-certificates); [blueprint/clpr-service.md §3.2](../../blueprint/clpr-service.md#32-registration-and-admission) |
-| 271 | Admitted endpoints serve all channels; endpoint bond is never slashed | blueprint | [blueprint/stakes-and-bonds.md §3](../../blueprint/stakes-and-bonds.md#3-endpoint-bond); [blueprint/clpr-service.md §3.1](../../blueprint/clpr-service.md#31-common-rules) |
-| 272 | `registerEndpoint` operation | blueprint | [blueprint/clpr-service.md §3.2](../../blueprint/clpr-service.md#32-registration-and-admission); [blueprint/stakes-and-bonds.md §3](../../blueprint/stakes-and-bonds.md#3-endpoint-bond) |
+| 271 | Admitted endpoints serve all channels; endpoints are never slashed | blueprint | [blueprint/stakes-and-bonds.md §3](../../blueprint/stakes-and-bonds.md#3-endpoints); [blueprint/clpr-service.md §3.1](../../blueprint/clpr-service.md#31-common-rules) |
+| 272 | `registerEndpoint` operation | blueprint | [blueprint/clpr-service.md §3.2](../../blueprint/clpr-service.md#32-registration-and-admission); [blueprint/stakes-and-bonds.md §3](../../blueprint/stakes-and-bonds.md#3-endpoints) |
 | 273 | `addEndpoint` operation | blueprint | [blueprint/clpr-service.md §3.2](../../blueprint/clpr-service.md#32-registration-and-admission) |
-| 274 | `removeEndpoint` operation | blueprint | [blueprint/clpr-service.md §3.2](../../blueprint/clpr-service.md#32-registration-and-admission); [blueprint/stakes-and-bonds.md §3](../../blueprint/stakes-and-bonds.md#3-endpoint-bond) |
+| 274 | `removeEndpoint` operation | blueprint | [blueprint/clpr-service.md §3.2](../../blueprint/clpr-service.md#32-registration-and-admission); [blueprint/stakes-and-bonds.md §3](../../blueprint/stakes-and-bonds.md#3-endpoints) |
 | 275 | `updateEndpointManifest` operation | blueprint | [blueprint/clpr-service.md §3.2](../../blueprint/clpr-service.md#32-registration-and-admission) |
 | 276 | `getEndpointManifest` operation | specified | [protocol/endpoint-manifest.md §3](../../protocol/endpoint-manifest.md#3-local-manifest); [blueprint/clpr-service.md §2.7](../../blueprint/clpr-service.md#27-queries) |
 | | **[Application Delivery](../eap-v0.2-source/clpr-service-spec.md#application-delivery)** | | |
@@ -367,7 +368,7 @@ This record accounts for every item of the EAP v0.2 specification text (archived
 | | **[8.3 Reorg Risk](../eap-v0.2-source/clpr-service-spec.md#83-reorg-risk)** | | |
 | 289 | Reorganization risk and finality choice | blueprint | [blueprint/clpr-service.md §6.2](../../blueprint/clpr-service.md#62-finality) |
 | | **[8.4 Endpoint Sybil Resistance](../eap-v0.2-source/clpr-service-spec.md#84-endpoint-sybil-resistance)** | | |
-| 290 | Endpoint Sybil resistance by administrator curation and bond | blueprint | [blueprint/clpr-service.md §6.3](../../blueprint/clpr-service.md#63-endpoint-admission) |
+| 290 | Endpoint Sybil resistance by administrator curation (no bond) | blueprint | [blueprint/clpr-service.md §6.3](../../blueprint/clpr-service.md#63-endpoint-admission) |
 | | **[8.5 Reentrancy](../eap-v0.2-source/clpr-service-spec.md#85-reentrancy)** | | |
 | 291 | Guard state-modifying functions against reentrancy | blueprint | [blueprint/clpr-service.md §6.4](../../blueprint/clpr-service.md#64-reentrancy-and-external-calls) |
 | | **[8.6 Untrusted Payloads](../eap-v0.2-source/clpr-service-spec.md#86-untrusted-payloads)** | | |
@@ -453,7 +454,7 @@ This record accounts for every item of the EAP v0.2 specification text (archived
 | | **[3.1.2 Endpoint Manifest](../eap-v0.2-source/clpr-service.md#312-endpoint-manifest)** | | |
 | 41 | Manifest version and service address | merged | Same as `clpr-service-spec.md` row 37; [protocol/endpoint-manifest.md §2](../../protocol/endpoint-manifest.md#2-endpoint-manifest), [§5](../../protocol/endpoint-manifest.md#5-manifest-proofs) |
 | 42 | An endpoint has an optional service endpoint | merged | Same as `clpr-service-spec.md` row 32; [protocol/endpoint-manifest.md §1](../../protocol/endpoint-manifest.md#1-endpoint) |
-| 43 | Local manifest admission and endpoint bond | merged | Same as `clpr-service-spec.md` row 245; [protocol/endpoint-manifest.md §3](../../protocol/endpoint-manifest.md#3-local-manifest); [blueprint/stakes-and-bonds.md §3](../../blueprint/stakes-and-bonds.md#3-endpoint-bond) |
+| 43 | Local manifest admission and endpoint bond | merged | Same as `clpr-service-spec.md` row 245; [protocol/endpoint-manifest.md §3](../../protocol/endpoint-manifest.md#3-local-manifest); [blueprint/stakes-and-bonds.md §3](../../blueprint/stakes-and-bonds.md#3-endpoints) |
 | 44 | Peer manifest per channel | merged | Same as `clpr-service-spec.md` row 131; [protocol/endpoint-manifest.md §4](../../protocol/endpoint-manifest.md#4-peer-manifest) |
 | 45 | Public manifest query and proof construction | merged | Same as `clpr-service-spec.md` row 246; [protocol/endpoint-manifest.md §3](../../protocol/endpoint-manifest.md#3-local-manifest), [§5](../../protocol/endpoint-manifest.md#5-manifest-proofs) |
 | 46 | Channel creation with a manifest proof | merged | Same as `clpr-service-spec.md` row 132; [protocol/endpoint-manifest.md §4](../../protocol/endpoint-manifest.md#4-peer-manifest), [§5](../../protocol/endpoint-manifest.md#5-manifest-proofs) |
@@ -461,7 +462,7 @@ This record accounts for every item of the EAP v0.2 specification text (archived
 | 48 | Supplemental discovery protocols | merged | Same as `clpr-service-spec.md` row 135; [protocol/endpoint-manifest.md §6](../../protocol/endpoint-manifest.md#6-endpoint-discovery) |
 | 49 | Endpoint reciprocity | merged | Same as `clpr-service-spec.md` row 247; [blueprint/clpr-service.md §5.3](../../blueprint/clpr-service.md#53-peer-selection) |
 | 50 | Hiero manifest derived from the consensus roster | blueprint | [blueprint/clpr-service.md §3.3](../../blueprint/clpr-service.md#33-roster-derived-manifest) |
-| 51 | Endpoint registration with bond on EVM ledgers | merged | Same as `clpr-service-spec.md` row 272; [blueprint/clpr-service.md §3.2](../../blueprint/clpr-service.md#32-registration-and-admission); [blueprint/stakes-and-bonds.md §3](../../blueprint/stakes-and-bonds.md#3-endpoint-bond) |
+| 51 | Endpoint registration with bond on EVM ledgers | merged | Same as `clpr-service-spec.md` row 272; [blueprint/clpr-service.md §3.2](../../blueprint/clpr-service.md#32-registration-and-admission); [blueprint/stakes-and-bonds.md §3](../../blueprint/stakes-and-bonds.md#3-endpoints) |
 | 52 | Endpoint Sybil resistance | merged | Same as `clpr-service-spec.md` row 290; [blueprint/clpr-service.md §6.3](../../blueprint/clpr-service.md#63-endpoint-admission) |
 | | **[3.1.3 Establishing and Updating Channels](../eap-v0.2-source/clpr-service.md#313-establishing-and-updating-channels)** | | |
 | 53 | Channel creation summary | merged | Same as `clpr-service-spec.md` row 232; [protocol/channel-setup.md §2](../../protocol/channel-setup.md#2-registration) |
