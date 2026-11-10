@@ -45,7 +45,7 @@ Start with the [overview](clpr-overview.md). It describes the parts of CLPR and 
 
 ## Changing the specification
 
-Changes to Protocol behavior are made through CLPR Improvement Proposals ([CLIPs](clips/README.md)). Other changes are made by pull request. [CLIP-0001](clips/clip-0001.md) defines which change needs which approval. See [CONTRIBUTING.md](CONTRIBUTING.md), [GOVERNANCE.md](GOVERNANCE.md) and [MAINTAINERS.md](MAINTAINERS.md).
+Changes to Protocol behavior are made through CLPR Improvement Proposals ([CLIPs](clips/README.md)). Other changes are made by pull request. [CLIP-0001](clips/clip-0001.md) defines which change needs which approval. See [CONTRIBUTING.md](CONTRIBUTING.md), [GOVERNANCE.md](GOVERNANCE.md) and [MAINTAINERS.md](MAINTAINERS.md). AI agents follow [AGENTS.md](AGENTS.md), and `python3 tools/spec_lint.py` runs the repository's mechanical checks.
 
 ## Archive
 
