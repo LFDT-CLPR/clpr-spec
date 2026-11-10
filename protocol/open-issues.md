@@ -2,7 +2,7 @@
 
 > **Non-normative.** This document is not a Protocol module, so it carries no version header or History.
 
-This document lists known open design questions in v0.2. The modules each issue affects state the v0.2 rules; nothing here changes them. Resolving an issue that changes Protocol behavior requires a CLIP ([CLIP-0001 §5.2](../clips/clip-0001.md#52-what-each-change-needs)).
+This document lists known open design questions. The modules each issue affects state the rules that apply; nothing here changes them. Resolving an issue that changes Protocol behavior requires a CLIP ([CLIP-0001 §5.2](../clips/clip-0001.md#52-what-each-change-needs)).
 
 ## OI-1. What the configuration proof must authenticate
 
@@ -25,7 +25,7 @@ This document lists known open design questions in v0.2. The modules each issue 
 
 A variant of the first form, with an added epoch length field, is returned by an optional endpoint query that the specification does not define. A strict decoder of the first form rejects it.
 
-**Current behavior.** Verifiers accept one form or the other. No production component produces a configuration proof in either form. [QBFT epoch §9](../ledgers/besu/proof-schemes/qbft-epoch.md#9-configuration-and-manifest-proofs) describes the situation; neither form is normative.
+**Current behavior.** The scheme defines no form. A verifier contract documents the form it accepts ([QBFT epoch §9](../ledgers/besu/proof-schemes/qbft-epoch.md#9-configuration-and-manifest-proofs)).
 
 **Options.**
 1. Specify one form in the QBFT epoch scheme, and require producers and verifiers to conform.
@@ -60,7 +60,7 @@ A variant of the first form, with an added epoch length field, is returned by an
 
 ## OI-5. Calibration of the connector stake
 
-**Problem.** A connector's locked stake has to cover the worst-case losses its messages can cause: on the destination, the execution cost of messages that arrive while it is underfunded; on the source, the penalties for failure replies ([Stakes and bonds §1](../blueprint/stakes-and-bonds.md#1-connector-stake)). If the stake is too small, a connector can authorize a burst of messages that costs endpoints more than slashing recovers. v0.2 sets no method for choosing the minimum stake.
+**Problem.** A connector's locked stake has to cover the worst-case losses its messages can cause: on the destination, the execution cost of messages that arrive while it is underfunded; on the source, the penalties for failure replies ([Stakes and bonds §1](../blueprint/stakes-and-bonds.md#1-connector-stake)). If the stake is too small, a connector can authorize a burst of messages that costs endpoints more than slashing recovers. The specification sets no method for choosing the minimum stake.
 
 **Current behavior.** Each CLPR Service enforces a configured minimum stake. The minimum is not derived from the connector's possible exposure.
 
@@ -99,7 +99,7 @@ A variant of the first form, with an added epoch length field, is returned by an
 
 **Problem.** The hinTS with WRAPS proof scheme describes the signature layout, the encodings of curve points and the checks a verifier performs ([hinTS with WRAPS §4.4](../ledgers/hiero/proof-schemes/hints-wraps.md#44-block-signature) and [§6](../ledgers/hiero/proof-schemes/hints-wraps.md#6-decode-and-verify-algorithm)). It does not give the WRAPS verification key, the Poseidon parameters or the full hinTS verification steps. Without them, a verifier for this scheme cannot be built from the specification alone.
 
-**Current behavior.** Verifiers of this scheme take these parameters from the cryptographic library that produces the proofs.
+**Current behavior.** The scheme does not state these parameters, so an independent verifier cannot be built from the specification alone.
 
 **Options.**
 1. Specify the parameters and the hinTS verification steps in a later revision of the scheme. This is a Ledger Specification change and needs no new specification version.

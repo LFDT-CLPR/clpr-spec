@@ -4,11 +4,11 @@
 
 This proof scheme proves Besu CLPR Service state under QBFT seals, and follows validator changes header by header.
 
-## 1. Status
+## 1. Roles
 
-| Role | Implemented by |
+| Role | Performed by |
 |---|---|
-| Producer | None in v0.2 |
+| Bundle producer | The Besu CLPR Endpoint |
 | Verifiers | A verifier contract for EVM ledgers |
 
 ## 2. Trust model

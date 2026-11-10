@@ -12,7 +12,7 @@ The EVM family is the set of ledgers whose CLPR Service, verifier contracts, app
 |---|---|
 | Besu | [besu/README.md](../besu/README.md) |
 
-Besu is the only member documented in v0.2.
+This specification documents one member, Besu.
 
 ## 2. Verifier API
 

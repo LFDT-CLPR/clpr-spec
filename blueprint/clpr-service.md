@@ -205,7 +205,7 @@ A change in node weights alone does not change the manifest. A misbehaving node 
 
 ### 4.1 Throttles
 
-The meaning of each throttle is defined in [throttles](../protocol/ledger-configuration.md#3-throttles). The recommended defaults below are the values the v0.2 implementations use; the EAP v0.2 text left defaults to be determined.
+The meaning of each throttle is defined in [throttles](../protocol/ledger-configuration.md#3-throttles). Recommended defaults:
 
 | Throttle | Hiero | EVM ledgers |
 |---|---|---|
@@ -223,7 +223,7 @@ A bundle can carry `max_messages_per_bundle` messages of the maximum size only i
 
 ### 4.2 Service parameters
 
-The defaults below are the values the v0.2 implementations use. Amounts are in the ledger's smallest currency unit: 10⁻⁸ of a whole token on Hiero, and wei on EVM ledgers. "—" means the parameter does not exist on that ledger. Parameter names are informative; each ledger binds its own.
+Amounts are in the ledger's smallest currency unit: 10⁻⁸ of a whole token on Hiero, and wei on EVM ledgers. "—" means the parameter does not exist on that ledger. Parameter names are informative; each ledger binds its own.
 
 | Parameter | Hiero | EVM ledgers | Meaning |
 |---|---|---|---|

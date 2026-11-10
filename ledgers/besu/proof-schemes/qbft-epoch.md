@@ -4,15 +4,13 @@
 
 This proof scheme proves Besu CLPR Service state under QBFT seals, and follows validator changes at epoch boundaries.
 
-## 1. Status
+## 1. Roles
 
-| Role | Implemented by |
+| Role | Performed by |
 |---|---|
 | Bundle producer | The Besu CLPR Endpoint |
-| Configuration and manifest proof producer | None in v0.2 ([OI-2](../../../protocol/open-issues.md#oi-2-configuration-proof-format-for-the-qbft-epoch-scheme)) |
+| Configuration and manifest proofs | The format is an open issue ([OI-2](../../../protocol/open-issues.md#oi-2-configuration-proof-format-for-the-qbft-epoch-scheme)) |
 | Verifiers | A verifier contract for EVM ledgers; Hiero's built-in verifier |
-
-This is the only Besu proof scheme with a bundle producer in v0.2.
 
 ## 2. Trust model
 
@@ -174,7 +172,7 @@ A verifier MUST reject the bundle when:
 
 ### 9.1 Configuration proof
 
-The layout of the qbft-epoch configuration proof is open issue **OI-2** ([Open issues](../../../protocol/open-issues.md#oi-2-configuration-proof-format-for-the-qbft-epoch-scheme)). Two layouts are in use, one protobuf-encoded and one RLP-encoded; neither is normative in this revision. A verifier contract documents the layout it accepts.
+The layout of the qbft-epoch configuration proof is open issue **OI-2** ([Open issues](../../../protocol/open-issues.md#oi-2-configuration-proof-format-for-the-qbft-epoch-scheme)). This scheme does not define the layout. A verifier contract documents the layout it accepts.
 
 Whatever its layout, `verifyConfig` MUST return:
 - an initial trust anchor that determines `V`, `E`, `L` and `codeHash` as in [§7](#7-trust-anchor-changes), where `V` is the validator set listed in a sealed epoch boundary header of epoch `E`;

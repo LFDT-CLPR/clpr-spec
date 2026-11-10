@@ -71,7 +71,7 @@ After a channel is set up, changes to a ledger's configuration reach the peer th
 
 ### 5.1 ConfigUpdate
 
-`ConfigUpdate` is the only CONTROL message type in this version. CONTROL messages are defined in [message types](messaging.md#1-message-types).
+`ConfigUpdate` is the only CONTROL message type. CONTROL messages are defined in [message types](messaging.md#1-message-types).
 
 | Field | Type | Meaning |
 |---|---|---|

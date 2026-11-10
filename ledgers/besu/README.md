@@ -161,15 +161,15 @@ The rejection conditions of this section are the `reject` statements of `Storage
 
 ## 4. Proof schemes
 
-### 4.1 Schemes and status
+### 4.1 Schemes
 
-| Scheme | Validator set source | Producer | Verifiers |
+| Scheme | Validator set source | Produced by | Verified by |
 |---|---|---|---|
 | [qbft-epoch](proof-schemes/qbft-epoch.md) | Epoch boundary headers | Besu CLPR Endpoint | EVM verifier contract; Hiero built-in verifier |
-| [qbft-header](proof-schemes/qbft-header.md) | Every block header | None in v0.2 | EVM verifier contract |
-| [qbft-contract](proof-schemes/qbft-contract.md) | A validator contract's storage | None in v0.2 | EVM verifier contract |
+| [qbft-header](proof-schemes/qbft-header.md) | Every block header | Besu CLPR Endpoint | EVM verifier contract |
+| [qbft-contract](proof-schemes/qbft-contract.md) | A validator contract's storage | Besu CLPR Endpoint | EVM verifier contract |
 
-A channel uses one scheme for its life. A Besu network that changes how it selects validators needs new channels.
+A Besu network uses the scheme that matches how it selects validators. A channel uses one scheme for its life. A Besu network that changes how it selects validators needs new channels.
 
 ### 4.2 QBFT headers and seals
 

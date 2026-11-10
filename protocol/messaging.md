@@ -32,7 +32,7 @@ A message's content is a `MessagePayload`: exactly one of the following types.
 | `status` | `ReplyStatus` | The outcome (Section 7). |
 | `message_reply_data` | `bytes` | The application's response data. Empty when the status is CONNECTOR_NOT_FOUND, CONNECTOR_UNDERFUNDED or REDACTED. |
 
-`ControlMessage` holds exactly one control message type. The only type in this version is `ConfigUpdate` ([configuration propagation](ledger-configuration.md#5-configuration-propagation)). A CONTROL message involves no connector, is not delivered to any application and is not answered. A receiver MUST reject a bundle that contains a CONTROL message with no control message type set or with an unknown type.
+`ControlMessage` holds exactly one control message type. The only type is `ConfigUpdate` ([configuration propagation](ledger-configuration.md#5-configuration-propagation)). A CONTROL message involves no connector, is not delivered to any application and is not answered. A receiver MUST reject a bundle that contains a CONTROL message with no control message type set or with an unknown type.
 
 `RedactedMessage` (deprecated):
 

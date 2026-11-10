@@ -4,9 +4,9 @@
 
 This proof scheme proves Hiero state with Merkle paths under a hinTS threshold signature that WRAPS binds to the ledger id.
 
-## 1. Status
+## 1. Roles
 
-| Role | Implemented by |
+| Role | Performed by |
 |---|---|
 | Producer | The Hiero CLPR Endpoint. It produces bundles, configuration proofs and endpoint manifest proofs in this scheme. |
 | Verifiers | On Hiero, the built-in verifier at `0x…016e` ([built-in verifiers](../README.md#3-built-in-verifiers)). On EVM ledgers, a verifier contract. |
@@ -264,7 +264,7 @@ The pseudocode uses these functions:
   - the aggregate BLS signature is valid for `root` under the aggregate public key, hashing to G2 with the domain tag `BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_`.
 - `WrapsVerify(wp, ledger_id, vk)` verifies the WRAPS proof under the scheme's fixed WRAPS verification key, and requires `z_0[0] = le(ledger_id)` and `z_i[1] = Poseidon(vk)`.
 
-The full hinTS and WRAPS verification parameters (the WRAPS verification key, the Poseidon parameters and the full hinTS verification steps) are not yet specified in this revision ([OI-8](../../../protocol/open-issues.md#oi-8-hints-and-wraps-verification-parameters)).
+The full hinTS and WRAPS verification parameters (the WRAPS verification key, the Poseidon parameters and the full hinTS verification steps) are not specified in this document ([OI-8](../../../protocol/open-issues.md#oi-8-hints-and-wraps-verification-parameters)).
 
 ```
 function PathRoot(path) → root:
@@ -373,7 +373,7 @@ The verifier API of the destination ledger defines how this content is returned:
 | Trust anchor | The 32-byte ledger id of the peer ledger |
 | Trust anchor id | The ledger id |
 | Set | At channel setup: the ledger id against which the configuration proof was verified ([§9](#9-configuration-and-manifest-proofs)) |
-| Changes | Never. The ledger id is fixed, and the WRAPS proof in each signature covers roster changes. This scheme defines no ledger-id succession. |
+| Changes | Never. The ledger id is fixed, and the WRAPS proof in each signature covers roster changes. |
 
 A verifier of this scheme reports no trust anchor change. Except for the trust anchor update below, `new_trust_anchor` and `new_trust_anchor_id` are empty.
 
