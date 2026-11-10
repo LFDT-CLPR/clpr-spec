@@ -217,7 +217,7 @@ The meaning of each throttle is defined in [throttles](../protocol/ledger-config
 | `max_local_endpoints` | 0 (no limit) | 0 (no limit) |
 | `max_peer_endpoints` | 0 (no limit) | 0 (no limit) |
 
-A safe rule of thumb is `max_sync_bytes ≥ max_message_payload_bytes × max_messages_per_bundle + proof overhead`. If a bundle that carries a manifest proof is larger than the peer's `max_sync_bytes`, the peer's administrator can raise `max_sync_bytes`, or the local administrator can lower `max_local_endpoints`.
+A bundle can carry `max_messages_per_bundle` messages of the maximum size only if `max_sync_bytes ≥ max_message_payload_bytes × max_messages_per_bundle + proof overhead`. With a smaller `max_sync_bytes`, as in the Hiero defaults above, the sending endpoint puts fewer large messages in each bundle. If a bundle that carries a manifest proof is larger than the peer's `max_sync_bytes`, the peer's administrator can raise `max_sync_bytes`, or the local administrator can lower `max_local_endpoints`.
 
 `max_messages_per_bundle` SHOULD be small enough that a full bundle fits the ledger's transaction size and execution limits ([§5.4](#54-bundle-size-for-evm-receivers-of-hiero-bundles)).
 
