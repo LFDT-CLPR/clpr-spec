@@ -11,7 +11,7 @@ The **endpoint manifest** is the on-ledger list of the CLPR Endpoints that serve
 | Field | Type | Meaning and constraints |
 |---|---|---|
 | `service_endpoint` | `optional ServiceEndpoint` | Where the endpoint accepts [endpoint sync](endpoint-sync/README.md) connections. An endpoint whose `service_endpoint` is absent, or has an empty `ip_address`, only initiates syncs, for example on a private network. |
-| `tls_certificate` | `optional bytes` | A DER-encoded TLS certificate; empty when absent. It is not used by the network: no endpoint identity or transport security is derived from it ([transport](endpoint-sync/README.md#2-transport)). An empty value is always accepted. A CLPR Service MAY validate a non-empty value when an endpoint is registered (for example [EVM](../ledgers/evm/README.md#6-endpoint-certificates)). |
+| `tls_certificate` | `optional bytes` | The endpoint's TLS CA certificate: a DER-encoded X.509 certificate with an ECDSA P-384 key; empty when absent. Peers use it to authenticate the endpoint in mutual TLS; an empty value means the endpoint serves plaintext ([transport](endpoint-sync/README.md#2-transport)). An empty value is always accepted. A CLPR Service MAY validate a non-empty value when an endpoint is registered (for example [EVM](../ledgers/evm/README.md#6-endpoint-certificates)). |
 | `account_id` | `optional bytes` | The ledger-specific account identifier of the endpoint's operator; empty when absent. It is not used by the network. |
 
 `ServiceEndpoint`:

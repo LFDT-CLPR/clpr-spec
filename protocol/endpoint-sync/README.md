@@ -32,11 +32,14 @@ Every CLPR Endpoint that advertises a network address in its [endpoint](../endpo
 - An endpoint MAY expose other RPCs, on the same port or on other ports. They are not part of the protocol.
 - An endpoint MUST configure its gRPC maximum message size so that it accepts a `ClprSyncPayload` whose `bundle_payload` is as large as its own ledger's `max_sync_bytes` ([throttles](../ledger-configuration.md#3-throttles)). The limit therefore exceeds `max_sync_bytes` by the size of the rest of the message: `channel_id`, a `BundleRequest`, and the protobuf field overhead.
 
-**Transport security:**
+**Transport security.** Endpoints authenticate each other with mutual TLS, anchored in the `tls_certificate` of their [endpoint](../endpoint-manifest.md#1-endpoint) entries:
 
-- The server SHOULD serve TLS on the advertised port with a certificate that chains to a publicly trusted root. It MAY also accept plaintext on the same port. It MUST NOT request or require a client certificate.
-- A client MUST attempt TLS first. It MAY fall back to plaintext if the TLS handshake fails. It MAY skip validation of the server's certificate chain and of the host name or IP address.
-- No endpoint identity is derived from the transport. The integrity and authenticity of a bundle rest on its proof. A `BundleRequest` is an unproven hint.
+- An endpoint's `tls_certificate` is its **CA certificate**: a DER-encoded X.509 certificate with an ECDSA P-384 key. In a handshake the endpoint presents a **leaf certificate** with an Ed25519 key, signed by that CA. The leaf MUST NOT be a CA certificate. An endpoint MAY replace its leaf at any time, for example at each start; only the CA is published.
+- An endpoint whose entry has a non-empty `tls_certificate` MUST serve `sync` over mutual TLS on its advertised address and port, and MUST require a client certificate. It accepts a client leaf only if the leaf is signed by the CA of an endpoint in a peer manifest of one of its channels ([peer manifest](../endpoint-manifest.md#4-peer-manifest)). Otherwise it refuses the connection.
+- A client connecting to such an endpoint MUST present its own leaf, and MUST accept the server only if the server's leaf is signed by the CA in that endpoint's `tls_certificate`.
+- Neither side checks the host name or IP address against a certificate. Either side MAY also check a leaf's validity period.
+- An endpoint whose entry has an empty `tls_certificate` serves `sync` in plaintext, and a client connects to it in plaintext. There is no fallback from TLS to plaintext. An endpoint with no CA cannot present a client certificate, so it can sync only with endpoints that also have none.
+- The transport authenticates the peer as an endpoint of a known peer manifest. It does not authenticate bundles: the integrity and authenticity of a bundle rest on its proof, and a `BundleRequest` is an unproven hint.
 
 ## 3. Exchange
 

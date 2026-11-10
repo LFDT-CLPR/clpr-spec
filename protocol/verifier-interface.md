@@ -106,7 +106,7 @@ The CLPR Service replaces `trust_anchor` and `trust_anchor_id` before it process
 
 A verifier MAY accept several consecutive changes in one bundle, verifying each against the authority established by the previous one, and return only the last. The bundle MAY also carry messages proven under that last authority.
 
-**Identifiers.** For both `verifyConfig` and `verifyBundle`, a trust anchor id MUST be non-empty if and only if its trust anchor is non-empty. The CLPR Service MUST reject verifier output that violates this rule: channel setup fails, or the bundle is rejected.
+**Identifiers.** For both `verifyConfig` and `verifyBundle`, a trust anchor id MUST be non-empty if and only if its trust anchor is non-empty. The CLPR Service MUST reject `verifyBundle` output that violates this rule. It MAY also check `verifyConfig` output, in which case channel setup fails.
 
 **Compatibility.** A source ledger can be used with CLPR only if, whenever its signing authority changes, a proof can be built that is verifiable by an authority in the current trust anchor and contains a proven commitment to the new authority.
 
