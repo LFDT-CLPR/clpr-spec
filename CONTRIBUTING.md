@@ -94,7 +94,6 @@ o	Pull requests may be closed by a Maintainer if the decision is made that it is
 - **Code of conduct.** Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md).
 - **AI-assisted contributions.** AI tools may help prepare a contribution under these conditions:
   - The person who submits a contribution is its author and is accountable for all of it, including any part an AI tool produced. The `Signed-off-by` line and the GPG signature are that person's own; an AI tool cannot certify the Developer Certificate of Origin.
-  - State in the pull request description that AI tools were used, and for what. Commits made with AI help carry a `Co-Authored-By` trailer naming the tool.
   - Check every statement, citation and reported result yourself before submitting. Do not submit text you have not read.
   - Do not put embargoed security information, private or confidential material, or credentials into an AI tool.
   - AI agents working in this repository follow [AGENTS.md](AGENTS.md).
