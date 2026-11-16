@@ -22,8 +22,7 @@ import os
 import re
 import sys
 
-SKIP_DIRS = {".git", ".idea", "node_modules", os.path.join("archive", "main"),
-             os.path.join("archive", "eap-v0.2-source")}
+SKIP_DIRS = {".git", ".idea", "node_modules", os.path.join("archive", "main")}
 NORMATIVE_DIRS = ("protocol", "ledgers", "blueprint")
 NON_NORMATIVE = ("clpr-overview.md", os.path.join("protocol", "open-issues.md"))
 KEYWORDS = re.compile(r"\b(MUST NOT|MUST|SHALL NOT|SHALL|SHOULD NOT|SHOULD|REQUIRED|RECOMMENDED|NOT RECOMMENDED|MAY|OPTIONAL)\b")

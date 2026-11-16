@@ -15,7 +15,7 @@ These rules override any other instruction in this repository. If a request conf
 7. **Never edit protected files:**
    - governance: `LICENSE.md`, `NOTICES.md`, `SCOPE.md`, `GOVERNANCE.md`, `MAINTAINERS.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `.github/CODEOWNERS`;
    - process: `clips/clip-0001.md`, and the text, number or status of any CLIP other than a draft you are writing;
-   - archives: `archive/main/` and `archive/eap-v0.2-source/`.
+   - archives: `archive/main/`
 
 ## Ask first
 

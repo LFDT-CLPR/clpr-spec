@@ -51,5 +51,4 @@ Changes to Protocol behavior are made through CLPR Improvement Proposals ([CLIPs
 
 [`archive/`](archive/) holds earlier material, kept for reference only:
 - `archive/main/`: the specification and design records before CLIP-0001.
-- `archive/eap-v0.2-source/`: the EAP v0.2 text that this specification was rewritten from.
 - `archive/refactor-records/`: the [coverage matrix](archive/refactor-records/coverage-matrix.md) and the [implementation discrepancies](archive/refactor-records/implementation-discrepancies.md) of that rewrite.
