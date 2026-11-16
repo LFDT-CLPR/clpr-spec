@@ -1,0 +1,111 @@
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+
+package clpr.v0_2;
+
+import "protocol/schema/clpr_ledger_configuration.proto";
+
+// The payload of a queued message. Every message type shares the channel's
+// queue, running hash and bundle transport. Meaning: protocol/messaging.md §1.
+message ClprMessagePayload {
+  oneof payload {
+    // DATA message.
+    ClprMessage message = 1;
+
+    // REPLY message.
+    ClprMessageReply message_reply = 2;
+
+    // CONTROL message.
+    ClprControlMessage control = 3;
+
+    // Deprecated. REDACTED message. See protocol/messaging.md §10.
+    ClprRedactedMessage redacted_message = 4 [deprecated = true];
+  }
+}
+
+// DATA message: application content.
+message ClprMessage {
+  // 32-byte connector id. See protocol/connector-setup.md §1.
+  bytes connector_id = 1;
+
+  // Address of the destination application.
+  bytes target_application = 2;
+
+  // Address of the caller on the source ledger, set by the CLPR Service at enqueue.
+  bytes sender = 3;
+
+  // Opaque application data.
+  bytes message_data = 4;
+}
+
+// Outcome of processing a DATA message. Meaning: protocol/messaging.md §7.
+enum ClprMessageReplyStatus {
+  SUCCESS = 0;
+  APPLICATION_ERROR = 1;
+  CONNECTOR_NOT_FOUND = 2;
+  CONNECTOR_UNDERFUNDED = 3;
+
+  // Deprecated. Answers a REDACTED message.
+  REDACTED = 4 [deprecated = true];
+
+  // Deprecated. Not produced; accepted on receipt.
+  CHANNEL_CLOSED = 5 [deprecated = true];
+
+  // Value 6 is reserved and never produced. Receipt of it is defined in
+  // protocol/messaging.md §7.
+  reserved 6;
+}
+
+// REPLY message: the outcome of a DATA message.
+message ClprMessageReply {
+  // Id of the DATA message this replies to, in the queue that sent it.
+  uint64 message_id = 1;
+
+  ClprMessageReplyStatus status = 2;
+
+  // Opaque application response. See protocol/messaging.md §7.
+  bytes message_reply_data = 3;
+}
+
+// CONTROL message. See protocol/messaging.md §1 and protocol/conventions.md §3
+// (strict decoding).
+message ClprControlMessage {
+  oneof payload {
+    ClprConfigUpdate config_update = 1;
+  }
+}
+
+// Carries a ledger's updated configuration to the peer.
+// See protocol/ledger-configuration.md §5.
+message ClprConfigUpdate {
+  ClprLedgerConfiguration configuration = 1;
+}
+
+// Deprecated. REDACTED message: replaces the payload of a redacted DATA message
+// in the sender's queue. See protocol/messaging.md §10.
+message ClprRedactedMessage {
+  option deprecated = true;
+
+  // SHA-256 of the serialized ClprMessagePayload that the redaction replaced.
+  bytes message_hash = 1;
+
+  // Sender of the original DATA message. Optional.
+  bytes sender = 2;
+}
+
+// Key of a queued message.
+message ClprMessageKey {
+  // 32-byte channel id.
+  bytes channel_id = 1;
+
+  // Message id within the channel. See protocol/messaging.md §2.
+  uint64 message_id = 2;
+}
+
+// Stored value of a queued message.
+message ClprMessageValue {
+  ClprMessagePayload payload = 1;
+
+  // Running hash after this message. See protocol/messaging.md §4.
+  bytes running_hash_after_processing = 2;
+}

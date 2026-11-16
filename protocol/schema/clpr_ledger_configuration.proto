@@ -1,0 +1,53 @@
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+
+package clpr.v0_2;
+
+import "protocol/schema/clpr_endpoint_manifest.proto";
+
+// A ledger's configuration. Meaning: protocol/ledger-configuration.md §2.
+message ClprLedgerConfiguration {
+  // Protocol version. See protocol/ledger-configuration.md §4.
+  uint32 protocol_version = 1;
+
+  // CAIP-2 chain identifier, for example "hiero:mainnet" or "eip155:1".
+  string chain_id = 2;
+
+  // On-ledger address of the ledger's CLPR Service.
+  bytes service_address = 3;
+
+  // Consensus timestamp of the transaction that last changed this configuration.
+  Timestamp timestamp = 4;
+
+  // Capacity limits advertised by the ledger. See protocol/ledger-configuration.md §3.
+  ClprThrottles throttles = 5;
+
+  // Deprecated and unused; receivers ignore it, whether or not it is populated.
+  // The endpoint set is carried by ClprEndpointManifest. See protocol/ledger-configuration.md §2.
+  repeated ClprEndpoint endpoints = 6 [deprecated = true];
+
+  // Initial trust anchor for channels to this ledger. May be empty.
+  bytes initial_trust_anchor = 7;
+
+  // Identifier of initial_trust_anchor. Non-empty if and only if initial_trust_anchor is non-empty.
+  bytes initial_trust_anchor_id = 8;
+}
+
+// A consensus timestamp.
+// seconds MUST be non-negative. nanos MUST be at least 0 and at most 999,999,999.
+message Timestamp {
+  int64 seconds = 1;
+  int32 nanos = 2;
+}
+
+// Capacity limits published in a ledger's configuration. Meaning and the side
+// that applies each limit: protocol/ledger-configuration.md §3.
+message ClprThrottles {
+  uint32 max_messages_per_bundle = 1;
+  uint32 max_message_payload_bytes = 2;
+  uint64 max_gas_per_message = 3;
+  uint32 max_queue_depth = 4;
+  uint64 max_sync_bytes = 5;
+  uint32 max_local_endpoints = 6;
+  uint32 max_peer_endpoints = 7;
+}
