@@ -15,4 +15,6 @@ The roles below are defined in [CLIP-0001](clips/clip-0001.md), Section 2.2, and
 | [@jasuwienas](https://github.com/jasuwienas) |
 | [@Neeharika-Sompalli](https://github.com/Neeharika-Sompalli) |
 | [@lukasz-hashgraph](https://github.com/lukasz-hashgraph) |
-| [@Reccetech](https://github.com/Reccetech) |
+| [@mhess-swl](https://github.com/mhess-swl) |
+| [@tinker-michaelj](https://github.com/tinker-michaelj) |
+| [@viniciusjssouza](https://github.com/viniciusjssouza) |
