@@ -9,13 +9,13 @@ This proof scheme proves Hiero state with Merkle paths under a hinTS threshold s
 | Role | Performed by |
 |---|---|
 | Producer | The Hiero CLPR Endpoint. It produces bundles, configuration proofs and endpoint manifest proofs in this scheme. |
-| Verifiers | Hiero's built-in verifier at `0x…016e` ([built-in verifiers](../../README.md#3-built-in-verifiers)). EVM ledgers verify Hiero bundles with the [`hints`](../hints/README.md) scheme. |
+| Verifiers | Hiero's built-in verifier at `0x…016e` ([built-in verifiers](../ledger.md#3-built-in-verifiers)). EVM ledgers verify Hiero bundles with the [`hints`](hints.md) scheme. |
 
 ## 2. Trust model
 
 **What is proven.** A bundle proves that, at the start of a block signed by the Hiero ledger with ledger id `L`, the ledger's state contained:
 
-- the sender's channel record, which holds the sender's [queue metadata](../../../../protocol/bundle.md#2-queue-metadata);
+- the sender's channel record, which holds the sender's [queue metadata](../../../protocol/bundle.md#2-queue-metadata);
 - the outbound queue entries of the bundle's messages, each with its payload and its running hash;
 - optionally, the ledger's endpoint manifest.
 
@@ -23,7 +23,7 @@ Each item is a leaf of the ledger's state tree. A Merkle path, hashed with the l
 
 **Signature.** The block root is signed with a hinTS threshold signature (BLS12-381). A signature is valid only if the signing nodes hold **more than 1/2 of the consensus weight** of the roster that the hinTS verification key commits to.
 
-**Binding to the ledger.** Each signature carries a WRAPS proof (a recursive proof over BN254). It proves that the hinTS verification key descends, through the chain of roster changes, from the genesis roster that the ledger id identifies ([Hiero §1](../../README.md#1-ledger-identity)). Roster changes therefore need no change of trust anchor.
+**Binding to the ledger.** Each signature carries a WRAPS proof (a recursive proof over BN254). It proves that the hinTS verification key descends, through the chain of roster changes, from the genesis roster that the ledger id identifies ([Hiero §1](../ledger.md#1-ledger-identity)). Roster changes therefore need no change of trust anchor.
 
 **Binding to the CLPR Service and channel.** A Hiero ledger has one CLPR Service, and only that Service writes the state items above. The ledger id therefore identifies the Service. The verifier binds the bundle to the channel by checking the proven channel id against the channel context.
 
@@ -35,11 +35,11 @@ Each item is a leaf of the ledger's state tree. A Merkle path, hashed with the l
 - forge a WRAPS proof, by corrupting the chain of roster changes from the genesis roster or by breaking the proof system;
 - break the block digest, or the hinTS or WRAPS cryptographic assumptions.
 
-The [configuration proof](#9-configuration-and-manifest-proofs) is verified against a ledger id that the verifier holds independently of the proof. Which configuration values it must authenticate is open issue [OI-1](../../../../protocol/open-issues.md#oi-1-what-the-configuration-proof-must-authenticate).
+The [configuration proof](#9-configuration-and-manifest-proofs) is verified against a ledger id that the verifier holds independently of the proof. Which configuration values it must authenticate is open issue [OI-1](../../../protocol/open-issues.md#oi-1-what-the-configuration-proof-must-authenticate).
 
 ## 3. Proof material
 
-In addition to the abstract bundle content, the CLPR Endpoint collects, from the signed snapshot ([state read](../../bundle-aggregation.md#2-state-read-and-finality)):
+In addition to the abstract bundle content, the CLPR Endpoint collects, from the signed snapshot ([state read](../bundle-aggregation.md#2-state-read-and-finality)):
 
 | Material | Description |
 |---|---|
@@ -53,7 +53,7 @@ In addition to the abstract bundle content, the CLPR Endpoint collects, from the
 
 A bundle payload is a serialized `StateProof` protobuf message, with no envelope or version byte. Configuration proofs and manifest proofs use the same message ([§9](#9-configuration-and-manifest-proofs)).
 
-`StateProof`, `MerklePath`, `SiblingNode` and `TssSignedBlockProof` are defined in the [Hiero schema](../../schema/README.md). A path's `siblings` run from the leaf towards the root.
+`StateProof`, `MerklePath`, `SiblingNode` and `TssSignedBlockProof` are defined in the [Hiero schema](../schema/README.md). A path's `siblings` run from the leaf towards the root.
 
 A producer MUST build a bundle as follows:
 
@@ -63,7 +63,7 @@ A producer MUST build a bundle as follows:
 
 ### 4.2 Leaves
 
-A leaf is a serialized `StateItem` ([Hiero schema](../../schema/README.md)). `StateKey` and `StateValue` are each a protobuf `oneof` over the ledger's state items; the schema lists the members that this scheme proves. The field number identifies the item. A verifier identifies a leaf by the first tag of its `StateValue` bytes, `field_number × 8 + 2` (protobuf wire type 2):
+A leaf is a serialized `StateItem` ([Hiero schema](../schema/README.md)). `StateKey` and `StateValue` are each a protobuf `oneof` over the ledger's state items; the schema lists the members that this scheme proves. The field number identifies the item. A verifier identifies a leaf by the first tag of its `StateValue` bytes, `field_number × 8 + 2` (protobuf wire type 2):
 
 | State item | Field | `StateValue` tag | `StateKey` | `StateValue` content |
 |---|---|---|---|---|
@@ -72,9 +72,9 @@ A leaf is a serialized `StateItem` ([Hiero schema](../../schema/README.md)). `St
 | Outbound queue entry | 62 | 498 | field 62: `ClprMessageKey` | `ClprMessageValue` |
 | Endpoint manifest (singleton) | 66 | 530 | `singleton = 66` (field 1) | `ClprEndpointManifest` |
 
-`ClprLedgerConfiguration` is defined in the [Protocol schema](../../../../protocol/schema/README.md), `ClprEndpointManifest` in the [shared ledger schema](../../../schema/README.md), and `ClprMessageKey` and `ClprMessageValue` in the [Hiero schema](../../schema/README.md).
+`ClprLedgerConfiguration` is defined in the [Protocol schema](../../../protocol/schema.md), `ClprEndpointManifest` in the [shared ledger schema](../../schema/README.md), and `ClprMessageKey` and `ClprMessageValue` in the [Hiero schema](../schema/README.md).
 
-`ClprChannel` is a Hiero state message with fields numbered 1 to 20. The fields a verifier reads are defined in the [Hiero schema](../../schema/clpr_channel.proto).
+`ClprChannel` is a Hiero state message with fields numbered 1 to 20. The fields a verifier reads are defined in the [Hiero schema](../schema/clpr_channel.proto).
 
 ### 4.3 Hashing
 
@@ -132,7 +132,7 @@ The remaining bytes of the key and signature are the commitments and openings of
 
 ### 4.5 Limits
 
-The scheme sets no maximum number of paths or bundle size. A verifier MAY bound the number of paths, or the gas, it accepts. A receiving deployment then sets its throttles within that bound ([configuration parameters](../../../../blueprint/clpr-service.md#4-configuration-parameters)).
+The scheme sets no maximum number of paths or bundle size. A verifier MAY bound the number of paths, or the gas, it accepts. A receiving deployment then sets its throttles within that bound ([configuration parameters](../../../blueprint/clpr-service.md#4-configuration-parameters)).
 
 ### 4.6 Decoding
 
@@ -142,18 +142,18 @@ This scheme defines how a verifier decodes its own messages: `StateProof`, `Merk
 2. the `next_path_index` of every path;
 3. a leaf whose `StateValue` tag is not 482, 498 or 530;
 4. every channel leaf and manifest leaf except the last of each;
-5. the fields of `ClprChannel` with numbers 1 to 20 that the [Hiero schema](../../schema/clpr_channel.proto) does not list;
+5. the fields of `ClprChannel` with numbers 1 to 20 that the [Hiero schema](../schema/clpr_channel.proto) does not list;
 6. the block-root extension siblings, which it folds like any other sibling without interpreting them.
 
 A verifier MAY instead reject a bundle that contains a path as in item 1, a `next_path_index` other than `0xFFFFFFFF`, a leaf as in item 3, or more than one channel leaf or manifest leaf. It MAY reject an unknown field in the messages of this scheme, and a `ClprChannel` field with a number outside 1 to 20. A configuration or manifest proof is read only through its first path ([§9.2](#92-verification)).
 
-The messages carried in leaves (`ClprLedgerConfiguration`, `ClprEndpointManifest`, `ClprMessageKey`, `ClprMessageValue` and the payload it contains) are decoded under the [strict decoding](../../../../protocol/conventions.md#3-abstract-data-structures) rule.
+The messages carried in leaves (`ClprLedgerConfiguration`, `ClprEndpointManifest`, `ClprMessageKey`, `ClprMessageValue` and the payload it contains) are decoded under the [strict decoding](../../../protocol/conventions.md#3-abstract-data-structures) rule.
 
 ## 5. Encoding algorithm
 
 ### 5.1 Bundle
 
-The CLPR Endpoint builds a bundle from the content selected by [bundle aggregation](../../bundle-aggregation.md). `StateTreeSiblings(snapshot, key)` returns the siblings from the leaf to the root of the snapshot's starting state, encoded as in [§4.3](#43-hashing), and `BlockRootExtension` is defined in [§5.2](#52-block-root-extension). All values are read from the snapshot.
+The CLPR Endpoint builds a bundle from the content selected by [bundle aggregation](../bundle-aggregation.md). `StateTreeSiblings(snapshot, key)` returns the siblings from the leaf to the root of the snapshot's starting state, encoded as in [§4.3](#43-hashing), and `BlockRootExtension` is defined in [§5.2](#52-block-root-extension). All values are read from the snapshot.
 
 ```
 snapshot := the signed snapshot
@@ -199,15 +199,15 @@ The result of folding is the block root hash, the value the ledger signs.
 
 ## 6. Decode-and-verify algorithm
 
-The verifier receives the bundle payload, the channel's trust anchor (the ledger id, [§7](#7-trust-anchor-changes)) and the channel context. A verifier bound at deployment to one ledger id uses that id instead of the trust anchor. The channel context `ctx` is passed as the bytes `channel_id ‖ service_address`, the encoding of the [Hiero Verifier API](../../verifier-api.md#2-functions).
+The verifier receives the bundle payload, the channel's trust anchor (the ledger id, [§7](#7-trust-anchor-changes)) and the channel context. A verifier bound at deployment to one ledger id uses that id instead of the trust anchor. The channel context `ctx` is passed as the bytes `channel_id ‖ service_address`, the encoding of the [Hiero Verifier API](../verifier-api.md#2-functions).
 
-A verifier MUST verify the paths of the channel leaf, the manifest leaf it returns and the last message leaf. It MAY verify the paths of the other message leaves. Those messages are bound by the last message's running hash, which the CLPR Service checks ([running hash](../../../../protocol/messaging.md#4-running-hash)). A verifier that checks the other message leaves MUST reject the bundle if one fails ([§8](#8-rejection-conditions), condition 8). Such a verifier MAY order the message leaves by `message_id` instead of by path; it then takes the last message and the payloads in that order.
+A verifier MUST verify the paths of the channel leaf, the manifest leaf it returns and the last message leaf. It MAY verify the paths of the other message leaves. Those messages are bound by the last message's running hash, which the CLPR Service checks ([running hash](../../../protocol/messaging.md#4-running-hash)). A verifier that checks the other message leaves MUST reject the bundle if one fails ([§8](#8-rejection-conditions), condition 8). Such a verifier MAY order the message leaves by `message_id` instead of by path; it then takes the last message and the payloads in that order.
 
 A verifier MUST NOT return a manifest with version 0. It either treats a manifest leaf with version 0 as absent, as the pseudocode does, or rejects the bundle.
 
 The pseudocode uses these functions:
 
-- `decode T(x)` ([pseudocode](../../../../protocol/conventions.md#4-pseudocode)) decodes the bytes `x` as the message `T`, as defined in [§4.6](#46-decoding).
+- `decode T(x)` ([pseudocode](../../../protocol/conventions.md#4-pseudocode)) decodes the bytes `x` as the message `T`, as defined in [§4.6](#46-decoding).
 - `FirstTag(x)` is the first field tag of the protobuf bytes `x`; `Content(x)` is the bytes of that field. For a `StateKey` or `StateValue`, `Content` is the selected state item.
 - `le(x)` is the unsigned integer whose little-endian encoding is `x`.
 - `PayloadBytes(v)` is the bytes of field 1 (`payload`) of the `ClprMessageValue` `v`, exactly as they appear in the leaf.
@@ -217,7 +217,7 @@ The pseudocode uses these functions:
   - the aggregate BLS signature is valid for `root` under the aggregate public key, hashing to G2 with the domain tag `BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_`.
 - `WrapsVerify(wp, ledger_id, vk)` verifies the WRAPS proof under the scheme's fixed WRAPS verification key, and requires that it binds `ledger_id` as the start of the roster chain and `vk` as its current hinTS verification key.
 
-The full hinTS and WRAPS verification parameters (the WRAPS verification key, the Poseidon parameters, the WRAPS proof layout and public inputs, and the full hinTS verification steps) are not specified in this document ([OI-8](../../../../protocol/open-issues.md#oi-8-hints-and-wraps-verification-parameters)).
+The full hinTS and WRAPS verification parameters (the WRAPS verification key, the Poseidon parameters, the WRAPS proof layout and public inputs, and the full hinTS verification steps) are not specified in this document ([OI-8](../../../protocol/open-issues.md#oi-8-hints-and-wraps-verification-parameters)).
 
 ```
 function PathRoot(path) → root:                  // D is the digest of §4.3
@@ -317,22 +317,22 @@ function VerifyBundle(payload, trust_anchor, ctx)
     return (metadata, messages, last_id, last_hash, empty, empty, manifest)
 ```
 
-Every value the verifier returns comes from the proof. Nothing is taken from unproven input. The messages are in path order, which is ascending message id order. The source's `trust_anchor_id` is not returned ([queue metadata](../../../../protocol/bundle.md#2-queue-metadata)).
+Every value the verifier returns comes from the proof. Nothing is taken from unproven input. The messages are in path order, which is ascending message id order. The source's `trust_anchor_id` is not returned ([queue metadata](../../../protocol/bundle.md#2-queue-metadata)).
 
-The [Hiero Verifier API](../../verifier-api.md) defines how this content is returned.
+The [Hiero Verifier API](../verifier-api.md) defines how this content is returned.
 
 ## 7. Trust anchor changes
 
 | Item | Value |
 |---|---|
-| Trust anchor | The 64-byte ledger id of the peer ledger ([Hiero §1](../../README.md#1-ledger-identity)) |
+| Trust anchor | The 64-byte ledger id of the peer ledger ([Hiero §1](../ledger.md#1-ledger-identity)) |
 | Trust anchor id | The ledger id |
 | Set | At channel setup: the ledger id against which the configuration proof was verified ([§9](#9-configuration-and-manifest-proofs)) |
 | Changes | Never. The ledger id is fixed, and the WRAPS proof in each signature covers roster changes. |
 
 A verifier of this scheme reports no trust anchor change. Except for the trust anchor update below, `new_trust_anchor` and `new_trust_anchor_id` are empty.
 
-A verifier MAY keep an internal cache hint, for example the hash of a hinTS verification key whose WRAPS proof it has already verified, so that it can skip repeated work. A verifier bound at deployment to a single ledger id MAY return such a hint as `new_trust_anchor`, to be stored with the channel and passed back on later calls: a [trust anchor update](../../../../protocol/verifier-interface.md#4-trust-anchor-changes). In that case `new_trust_anchor_id` MUST be the ledger id. A hint never changes the trust anchor's meaning: the verifier MUST verify every signature against the ledger id, and a hint MUST NOT change whether a bundle is accepted. A verifier that reads the ledger id from the trust anchor MUST NOT return a hint.
+A verifier MAY keep an internal cache hint, for example the hash of a hinTS verification key whose WRAPS proof it has already verified, so that it can skip repeated work. A verifier bound at deployment to a single ledger id MAY return such a hint as `new_trust_anchor`, to be stored with the channel and passed back on later calls: a [trust anchor update](../../../protocol/verifier-interface.md#4-trust-anchor-changes). In that case `new_trust_anchor_id` MUST be the ledger id. A hint never changes the trust anchor's meaning: the verifier MUST verify every signature against the ledger id, and a hint MUST NOT change whether a bundle is accepted. A verifier that reads the ledger id from the trust anchor MUST NOT return a hint.
 
 ## 8. Rejection conditions
 

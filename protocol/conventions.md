@@ -37,8 +37,7 @@ An abstract data structure does not define an encoding. Encodings are defined in
 
 | What | Where encoded |
 |---|---|
-| Message payloads, including the ledger configuration that a ConfigUpdate carries, and channel status | [`protocol/schema/`](schema/README.md) |
-| Endpoint sync requests and responses | [`protocol/endpoint-sync/schema/`](endpoint-sync/schema/README.md) |
+| Message payloads, including the ledger configuration that a ConfigUpdate carries, channel status, and endpoint sync requests and responses | [`protocol/schema/`](schema/README.md) |
 | Ledger state proven to peers, such as channel state, queue entries and endpoint manifests, bundle content and configuration proofs | The Ledger Specifications ([`ledgers/`](../ledgers/README.md)): the source ledger's `schema/` directory and proof schemes, and [`ledgers/schema/`](../ledgers/schema/README.md) for encodings that several ledgers share |
 | Bundle wire layout, trust anchors and proofs | The proof scheme in the Ledger Specifications |
 | Verifier call inputs and outputs | The destination ledger's verifier API |
@@ -62,7 +61,7 @@ Interfaces, such as the [verifier interface](verifier-interface.md), are written
 
 **Interface signatures.** A signature is written `Name(a: T, …) → r: R`. Each parameter is given as `name: type`. `→` means "returns": it is followed by the result, or by a tuple `(r1, r2, …)` of several results, each named and, where the text gives one, typed.
 
-**Strict decoding.** This rule applies to the structures encoded in [`protocol/schema/`](schema/README.md) and [`protocol/endpoint-sync/schema/`](endpoint-sync/schema/README.md): message payloads, channel status and endpoint sync messages. A receiver of such a structure MUST NOT silently ignore data it does not recognize. It MUST reject a structure that contains an unrecognized field, an unrecognized enumeration value or message type, or malformed content. The module that receives the structure defines what rejection affects.
+**Strict decoding.** This rule applies to the structures encoded in [`protocol/schema/`](schema/README.md): message payloads, channel status and endpoint sync messages. A receiver of such a structure MUST NOT silently ignore data it does not recognize. It MUST reject a structure that contains an unrecognized field, an unrecognized enumeration value or message type, or malformed content. The module that receives the structure defines what rejection affects.
 
 A proof scheme defines its own decoding of bundles, trust anchors and proofs, including any of these structures that a proof contains. It states explicitly which fields and entries a verifier ignores.
 

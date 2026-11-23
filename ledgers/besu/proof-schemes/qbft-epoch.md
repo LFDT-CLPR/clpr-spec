@@ -14,7 +14,7 @@ This proof scheme proves Besu CLPR Service state under QBFT seals, and follows v
 
 ## 2. Trust model
 
-A bundle proves values in the CLPR Service's storage at a Besu block `H` ([proven storage layout](../README.md#3-proven-storage-layout)). `H` is final, because QBFT blocks are final when sealed.
+A bundle proves values in the CLPR Service's storage at a Besu block `H` ([proven storage layout](../ledger.md#3-proven-storage-layout)). `H` is final, because QBFT blocks are final when sealed.
 
 The verifier accepts `H` if a quorum of the anchored validator set sealed it. The anchored set changes only at **epoch boundaries**: the blocks whose number is a multiple of the epoch length `L`. Each epoch boundary header lists the validator set, and its seals link it to the set before it. A bundle carries the boundary headers the verifier has not yet seen.
 
@@ -23,7 +23,7 @@ The verifier accepts `H` if a quorum of the anchored validator set sealed it. Th
 | Epoch length `L` | The QBFT epoch length of the Besu network, with `L > 0`. It is part of the scheme's configuration, fixed at channel setup. |
 | Epoch of block `b` | `floor(b / L)` |
 | Epoch boundary header of epoch `e` | The header of block `e × L` |
-| Quorum | `ceil(2 × n / 3)` distinct seals from a set of `n` validators ([Besu §4.2](../README.md#42-qbft-headers-and-seals)) |
+| Quorum | `ceil(2 × n / 3)` distinct seals from a set of `n` validators ([Besu §4.2](../ledger.md#42-qbft-headers-and-seals)) |
 
 To forge a bundle an attacker must hold the keys of a quorum of the anchored set, or of a set reachable from it through sealed epoch boundary headers. The account proof pins the CLPR Service's code hash, so a Service whose code changes needs a new channel.
 
@@ -34,7 +34,7 @@ A validator change between boundaries takes effect for the verifier only at the 
 In addition to the abstract bundle content, the endpoint collects:
 - the RLP header of `H`;
 - the epoch boundary headers after the peer's anchored epoch;
-- the proofs of the CLPR Service state at `H` ([Besu §3.6](../README.md#36-producing-the-state-proofs)).
+- the proofs of the CLPR Service state at `H` ([Besu §3.6](../ledger.md#36-producing-the-state-proofs)).
 
 ## 4. Wire layout
 
@@ -44,17 +44,17 @@ The bundle is an RLP list of 5 items, or 7 when it carries the endpoint manifest
 |---|---|---|
 | 0 | Header of `H` | RLP list of at least 15 header fields |
 | 1 | Epoch boundary headers | RLP list of headers, each an RLP list of at least 15 fields, in ascending block order; can be empty |
-| 2 | Account proof | [Proof encoding](../README.md#34-proof-encoding) |
-| 3 | Channel storage proof | 5 or 6 entries ([proof encoding](../README.md#34-proof-encoding), [state proofs](../README.md#36-producing-the-state-proofs)) |
-| 4 | Bundle content | [Proof encoding](../README.md#34-proof-encoding) |
+| 2 | Account proof | [Proof encoding](../ledger.md#34-proof-encoding) |
+| 3 | Channel storage proof | 5 or 6 entries ([proof encoding](../ledger.md#34-proof-encoding), [state proofs](../ledger.md#36-producing-the-state-proofs)) |
+| 4 | Bundle content | [Proof encoding](../ledger.md#34-proof-encoding) |
 | 5 | Manifest storage proof | 7-item form only |
 | 6 | Manifest preimage | 7-item form only |
 
-Headers are encoded as in [Besu §4.2](../README.md#42-qbft-headers-and-seals).
+Headers are encoded as in [Besu §4.2](../ledger.md#42-qbft-headers-and-seals).
 
 ## 5. Encoding algorithm
 
-The pseudocode of this scheme uses the operations of [Besu §3.4](../README.md#34-proof-encoding) (`RLP`, `decode RLPList`), the header functions of [Besu §4.2](../README.md#42-qbft-headers-and-seals) (`headerAt`, `number`, `stateRoot`), and `serialize` ([Conventions §4](../../../protocol/conventions.md#4-pseudocode)).
+The pseudocode of this scheme uses the operations of [Besu §3.4](../ledger.md#34-proof-encoding) (`RLP`, `decode RLPList`), the header functions of [Besu §4.2](../ledger.md#42-qbft-headers-and-seals) (`headerAt`, `number`, `stateRoot`), and `serialize` ([Conventions §4](../../../protocol/conventions.md#4-pseudocode)).
 
 The endpoint runs [bundle aggregation](../bundle-aggregation.md) at block `H`, then:
 
@@ -128,7 +128,7 @@ function verifyBundle(proof, anchor, ctx):
     return (metadata, payloads, newAnchor, newAnchorId, manifest)
 ```
 
-`RequireQuorum` is defined in [Besu §4.2](../README.md#42-qbft-headers-and-seals), and `VerifyServiceState` in [Besu §3.5](../README.md#35-verifying-the-clpr-service-state). The service address comes from the channel context, not from the anchor.
+`RequireQuorum` is defined in [Besu §4.2](../ledger.md#42-qbft-headers-and-seals), and `VerifyServiceState` in [Besu §3.5](../ledger.md#35-verifying-the-clpr-service-state). The service address comes from the channel context, not from the anchor.
 
 ## 7. Trust anchor changes
 
@@ -157,7 +157,7 @@ A verifier MUST reject the bundle when:
 | Epoch boundary header `i` is not at block `(E + i + 1) × L`. |
 | A header lists an empty validator set, has no seals, has a seal that is not 65 bytes or does not recover, or has fewer than `ceil(2 × n / 3)` distinct signers from the set it is checked against. |
 | The epoch of the header of `H` is before `E + k`. |
-| Any condition of [Besu §3.5](../README.md#35-verifying-the-clpr-service-state). |
+| Any condition of [Besu §3.5](../ledger.md#35-verifying-the-clpr-service-state). |
 
 ## 9. Configuration and manifest proofs
 
@@ -171,4 +171,4 @@ Whatever its layout, `verifyConfig` MUST return:
 
 ### 9.2 Manifest proof
 
-The manifest proof is the [configuration-time manifest proof](../README.md#43-configuration-time-manifest-proof), checked against the initial validator set `V`. Its header MUST have at least 15 fields.
+The manifest proof is the [configuration-time manifest proof](../ledger.md#43-configuration-time-manifest-proof), checked against the initial validator set `V`. Its header MUST have at least 15 fields.

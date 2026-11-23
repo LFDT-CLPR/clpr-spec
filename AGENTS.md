@@ -36,7 +36,8 @@ These rules override any other instruction in this repository. If a request conf
   - `clpr-overview.md` and `protocol/open-issues.md` use none.
 - Keep headers current ([CLIP-0001 §3](clips/clip-0001.md#3-the-specification), [§7.1](clips/clip-0001.md#71-integration)):
   - a Protocol module carries `Category`, `Version` and `Last changed`, and ends with a History table;
-  - a Ledger Specification document carries `Applies to` and a `Revision` that increases when implementers must act.
+  - a Ledger Specification document carries `Applies to` and a `Revision` that increases when implementers must act;
+  - a `README.md` carries none.
 - Use the vocabulary in [clpr-overview.md §7](clpr-overview.md#7-vocabulary) and the notation and pseudocode rules in [protocol/conventions.md](protocol/conventions.md).
 - Run `python3 tools/spec_lint.py` before you hand work back, and fix what it reports.
 - End by stating what you changed, what you checked, and what you did not check.
@@ -82,6 +83,7 @@ Implementations follow the specification, not the reverse ([CLIP-0001 §6.5](cli
 - Define a term once, in its owning module, and use it exactly.
 - Put ledger-specific detail in `ledgers/`, recommended design in `blueprint/`, and explanation in the overview. Normative text gives a reason only when the rule would otherwise be unclear, in one clause.
 - Write pseudocode as [protocol/conventions.md](protocol/conventions.md) defines it.
+- A `README.md` orients the reader: it says what its directory holds and lists the files. It states no rules; specification text lives in named files. `tools/spec_lint.py` flags a header or an RFC 2119 keyword in a README.
 - Keep CLPR's own names (CLPR Service, CLPR Endpoint, connector, channel, bundle) and the field names of the schema.
 
 ## Procedures

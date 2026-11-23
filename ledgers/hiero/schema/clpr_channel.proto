@@ -7,7 +7,7 @@ import "protocol/schema/clpr_channel_status.proto";
 
 // The fields of a Hiero channel record that verifiers read. The record has
 // fields numbered 1 to 20; the others are not listed here, and verifiers
-// ignore them. Meaning: ledgers/hiero/proof-schemes/hints-wraps/README.md §4.2.
+// ignore them. Meaning: ledgers/hiero/proof-schemes/hints-wraps.md §4.2.
 message ClprChannel {
   // 32-byte channel id.
   bytes channel_id = 1;

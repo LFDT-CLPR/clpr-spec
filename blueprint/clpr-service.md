@@ -6,7 +6,7 @@ This document describes the recommended design of a CLPR Service beyond the shar
 
 ## 1. Structure and internal state
 
-A CLPR Service SHOULD keep the following stores. Their physical layout is defined per ledger. On EVM ledgers, the parts that peers prove are fixed by the [proven storage layout](../ledgers/besu/README.md#3-proven-storage-layout).
+A CLPR Service SHOULD keep the following stores. Their physical layout is defined per ledger. On EVM ledgers, the parts that peers prove are fixed by the [proven storage layout](../ledgers/besu/ledger.md#3-proven-storage-layout).
 
 | Store | Key | Content |
 |---|---|---|
@@ -38,7 +38,7 @@ A channel record holds the [shared channel state](../protocol/channel-setup.md#6
 
 At completion, the peer fields are set from `verifyConfig`.
 
-- On EVM ledgers, the verifier code hash is emitted at completion rather than stored. The record also holds the channel `salt` ([EVM channel identity](../ledgers/evm/README.md#4-channel-identity)), the peer's service address, and the bookkeeping of [§1.5](#15-reply-and-acknowledgement-bookkeeping). Timestamps are stored as one `uint96` count of nanoseconds since the Unix epoch and converted only at the wire boundary.
+- On EVM ledgers, the verifier code hash is emitted at completion rather than stored. The record also holds the channel `salt` ([EVM channel identity](../ledgers/evm/ledger-family.md#4-channel-identity)), the peer's service address, and the bookkeeping of [§1.5](#15-reply-and-acknowledgement-bookkeeping). Timestamps are stored as one `uint96` count of nanoseconds since the Unix epoch and converted only at the wire boundary.
 
 ### 1.2 Message queue
 
@@ -116,7 +116,7 @@ A Service SHOULD offer the following operations. Each ledger maps them to its ow
 
 The Service SHOULD reject an update that violates the constraints of [throttles](../protocol/ledger-configuration.md#3-throttles).
 
-- On Hiero, the per-message overhead used in the `max_sync_bytes` check is 65,536 bytes, and an update is rejected unless its service address is empty or the Service's own. The first update after the ledger id exists also sets the configuration's trust anchor fields ([Hiero ledger identity](../ledgers/hiero/README.md#1-ledger-identity)).
+- On Hiero, the per-message overhead used in the `max_sync_bytes` check is 65,536 bytes, and an update is rejected unless its service address is empty or the Service's own. The first update after the ledger id exists also sets the configuration's trust anchor fields ([Hiero ledger identity](../ledgers/hiero/ledger.md#1-ledger-identity)).
 - On EVM ledgers, the update also sets the service address and the configuration's trust anchor fields. It is rejected if only one of the anchor and its id is set. Because consensus time is the block time, the administrator SHOULD apply at most one configuration update per block, so that each update has a later timestamp.
 
 **Economic parameters** are the parameters in [§4.2](#42-service-parameters). On Hiero, they are network properties, changed through the ledger's network configuration. On EVM ledgers, the administrator changes them with `updateEconomicConfiguration`, which enforces the bounds in [§4.2](#42-service-parameters).
@@ -136,7 +136,7 @@ The recovery close is the path when no bundle from the peer will close the chann
 
 ### 2.6 Queries
 
-The Service SHOULD offer these read operations to any caller. None of them is part of [endpoint sync](../protocol/endpoint-sync/README.md).
+The Service SHOULD offer these read operations to any caller. None of them is part of [endpoint sync](../protocol/endpoint-sync.md).
 
 | Query | Returns |
 |---|---|
@@ -146,7 +146,7 @@ The Service SHOULD offer these read operations to any caller. None of them is pa
 | `getConnector` | A connector's record ([§1.3](#13-connector-record-and-counters)) |
 | `deriveConnectorId` | The [connector id](../protocol/connector-setup.md#1-connector-identity) for given inputs (MAY be offered) |
 
-On Hiero, the configuration and manifest responses also carry a state proof of the returned value ([configuration and manifest proofs](../ledgers/hiero/proof-schemes/hints-wraps/README.md#9-configuration-and-manifest-proofs)).
+On Hiero, the configuration and manifest responses also carry a state proof of the returned value ([configuration and manifest proofs](../ledgers/hiero/proof-schemes/hints-wraps.md#9-configuration-and-manifest-proofs)).
 
 ## 3. Endpoint admission
 
@@ -175,14 +175,14 @@ The registrant account is the caller of `registerEndpoint`. It is unique among e
 
 | Operation | Caller | Effect | Version |
 |---|---|---|---|
-| `registerEndpoint(endpoint)` | any | Creates a PENDING entry. Rejected if an entry exists. The Service MAY validate the endpoint data; EVM ledgers apply the certificate check of the [EVM family](../ledgers/evm/README.md#6-endpoint-certificates) | Unchanged |
+| `registerEndpoint(endpoint)` | any | Creates a PENDING entry. Rejected if an entry exists. The Service MAY validate the endpoint data; EVM ledgers apply the certificate check of the [EVM family](../ledgers/evm/ledger-family.md#6-endpoint-certificates) | Unchanged |
 | `addEndpoint(registrant, endpoint)` | administrator | Promotes a PENDING entry, using its registered data. With no entry, adds `endpoint` directly. Rejected if the entry is already LIVE or the manifest is full | +1 |
 | `removeEndpoint(registrant)` | registrant or administrator | Removes the entry | +1 if the entry was LIVE |
 | `updateEndpointManifest(add, remove)` | administrator | Applies a batch atomically. Removals come first and skip unknown accounts. Additions follow `addEndpoint`; an addition that names an entry already LIVE rejects the batch. Rejected if the result would exceed `max_local_endpoints` | +1 once, if anything changed |
 
 ### 3.3 Roster-derived manifest
 
-On a ledger whose consensus nodes are its endpoints, the Service MAY derive the manifest from the node roster instead, with no administrator operations. Hiero does this ([Hiero endpoint manifest](../ledgers/hiero/README.md#7-endpoint-manifest)).
+On a ledger whose consensus nodes are its endpoints, the Service MAY derive the manifest from the node roster instead, with no administrator operations. Hiero does this ([Hiero endpoint manifest](../ledgers/hiero/ledger.md#7-endpoint-manifest)).
 
 ## 4. Configuration parameters
 
@@ -222,7 +222,7 @@ Amounts are in the ledger's smallest currency unit: 10⁻⁸ of a whole token on
 | `connectorInboundGasStipend` | — | 500,000 | Gas for the connector's inbound-message notification ([§6.4](#64-reentrancy-and-external-calls)) |
 | `maxChannels`, `maxConnectors` | — | 0 (no limit) | Caps on channel and connector counts |
 | `verifierGasLimit` | 2,000,000 | all available gas | Gas given to a verifier call |
-| `manifestGracePeriod` | 300 s | — | Construction deadline ([Hiero endpoint manifest](../ledgers/hiero/README.md#7-endpoint-manifest)) |
+| `manifestGracePeriod` | 300 s | — | Construction deadline ([Hiero endpoint manifest](../ledgers/hiero/ledger.md#7-endpoint-manifest)) |
 | `manifestGraceExtension` | 300 s | — | Length of each extension |
 | `manifestMaxGraceExtensions` | 2 | — | Maximum number of extensions |
 | Peer manifest size cap | 16,384 bytes | — | Largest stored encoding of a peer manifest ([peer manifest](../protocol/endpoint-manifest.md#4-peer-manifest)) |
@@ -254,11 +254,11 @@ An endpoint SHOULD choose sync peers from the peer manifest at random, weighted 
 
 ### 5.4 Bundle size for EVM receivers of Hiero bundles
 
-Verifying a Hiero bundle on an EVM ledger is expensive, and the cost grows with the number of messages. A bundle carries one proof path for the channel, one for the manifest when included, and one per message, within the path limits of the [`hints`](../ledgers/hiero/proof-schemes/hints/README.md#45-limits) scheme.
+Verifying a Hiero bundle on an EVM ledger is expensive, and the cost grows with the number of messages. A bundle carries one proof path for the channel, one for the manifest when included, and one per message, within the path limits of the [`hints`](../ledgers/hiero/proof-schemes/hints.md#45-limits) scheme.
 
 An EVM ledger that receives bundles from Hiero SHOULD set `max_messages_per_bundle` so that a full bundle stays within the path limit and within the ledger's per-transaction gas limit. On a ledger with a low per-transaction gas cap, a bundle can carry only a few messages.
 
-EVM receivers verify the [`hints`](../ledgers/hiero/proof-schemes/hints/README.md) scheme, which needs only the ledger's hinTS signatures. Hiero receivers verify [`hints-wraps`](../ledgers/hiero/proof-schemes/hints-wraps/README.md), which needs the WRAPS proof setup to have completed as well.
+EVM receivers verify the [`hints`](../ledgers/hiero/proof-schemes/hints.md) scheme, which needs only the ledger's hinTS signatures. Hiero receivers verify [`hints-wraps`](../ledgers/hiero/proof-schemes/hints-wraps.md), which needs the WRAPS proof setup to have completed as well.
 
 ## 6. Security considerations
 
@@ -292,7 +292,7 @@ CLPR provides authenticity and integrity but not confidentiality. Payloads are s
 
 ### 6.6 Service upgrades
 
-On EVM ledgers, peers prove the Service's state by its [proven storage layout](../ledgers/besu/README.md#3-proven-storage-layout). An upgrade that changes the layout breaks bundle production and verification. It SHOULD be coordinated with endpoint operators and verifier deployments, or deployed as a new Service.
+On EVM ledgers, peers prove the Service's state by its [proven storage layout](../ledgers/besu/ledger.md#3-proven-storage-layout). An upgrade that changes the layout breaks bundle production and verification. It SHOULD be coordinated with endpoint operators and verifier deployments, or deployed as a new Service.
 
 ### 6.7 Queue monopolization
 
@@ -300,12 +300,12 @@ Per-connector quotas keep one connector from filling a channel's queue ([queue q
 
 ### 6.8 Transport and sync hygiene
 
-- The connection and TLS session of [endpoint sync](../protocol/endpoint-sync/README.md) MAY persist across cycles; each cycle uses a new stream.
-- An endpoint SHOULD serve TLS whenever it has a certificate. A client SHOULD verify the server against the manifest certificate or a configured pin ([transport](../protocol/endpoint-sync/README.md#2-transport)).
+- The connection and TLS session of [endpoint sync](../protocol/endpoint-sync.md) MAY persist across cycles; each cycle uses a new stream.
+- An endpoint SHOULD serve TLS whenever it has a certificate. A client SHOULD verify the server against the manifest certificate or a configured pin ([transport](../protocol/endpoint-sync.md#2-transport)).
 - An endpoint MAY end a stream, and MAY stop or reduce syncing with a peer endpoint, when the peer:
-  - sends messages that break the [rules](../protocol/endpoint-sync/README.md#32-rules) or exceed the gRPC message size limit;
+  - sends messages that break the [rules](../protocol/endpoint-sync.md#32-rules) or exceed the gRPC message size limit;
   - sends bundles that its ledger rejects; or
-  - keeps a stream open without completing the [sequence](../protocol/endpoint-sync/README.md#33-sequence).
+  - keeps a stream open without completing the [sequence](../protocol/endpoint-sync.md#33-sequence).
 - A ledger's rejection of a bundle MAY count toward such local thresholds. There is no cross-ledger misbehavior reporting.
 
 ## 7. Recovery scenarios

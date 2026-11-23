@@ -10,8 +10,8 @@ The **endpoint manifest** is the on-ledger list of the CLPR Endpoints that serve
 
 | Field | Type | Meaning and constraints |
 |---|---|---|
-| `service_endpoint` | `optional ServiceEndpoint` | Where the endpoint accepts [endpoint sync](endpoint-sync/README.md) connections. An endpoint whose `service_endpoint` is absent, or has an empty `ip_address`, only initiates syncs, for example on a private network. |
-| `tls_certificate` | `optional bytes` | The certificate the endpoint presents when it serves endpoint sync over TLS: a DER-encoded X.509 certificate; empty when absent. A non-empty value means the endpoint serves TLS, and an empty value means it serves plaintext. Peers MAY use it to verify the endpoint ([transport](endpoint-sync/README.md#2-transport)). An empty value is always accepted. A CLPR Service MAY validate a non-empty value when an endpoint is registered, as its Ledger Specifications define ([ledgers](../ledgers/README.md)). |
+| `service_endpoint` | `optional ServiceEndpoint` | Where the endpoint accepts [endpoint sync](endpoint-sync.md) connections. An endpoint whose `service_endpoint` is absent, or has an empty `ip_address`, only initiates syncs, for example on a private network. |
+| `tls_certificate` | `optional bytes` | The certificate the endpoint presents when it serves endpoint sync over TLS: a DER-encoded X.509 certificate; empty when absent. A non-empty value means the endpoint serves TLS, and an empty value means it serves plaintext. Peers MAY use it to verify the endpoint ([transport](endpoint-sync.md#2-transport)). An empty value is always accepted. A CLPR Service MAY validate a non-empty value when an endpoint is registered, as its Ledger Specifications define ([ledgers](../ledgers/README.md)). |
 | `account_id` | `optional bytes` | The ledger-specific account identifier of the endpoint's operator; empty when absent. It is not used by the network. |
 
 `ServiceEndpoint`:
@@ -60,13 +60,13 @@ Each channel holds a copy of the peer CLPR Service's manifest, the **peer manife
 A Service's local manifest reaches its peers only as proven content, in two ways:
 
 1. **At channel setup.** `completeChannel` takes an optional manifest proof, which is passed to `verifyConfig` ([registration](channel-setup.md#2-registration)). The registrant SHOULD supply it. The proof MUST be verifiable against the initial trust anchor established by the same `verifyConfig` call. When it is empty, the channel starts with no manifest and installs the peer manifest from the first bundle that carries one.
-2. **In bundles.** A bundle MAY carry a proof of the source Service's current local manifest ([bundle content](bundle.md#1-bundle-content)). An endpoint includes one when the peer's copy is older than the local manifest, as reported in sync requests and in the peer's queue metadata ([endpoint obligations](endpoint-sync/README.md#5-endpoint-obligations)). The receiving Service applies the update rule of Section 4.
+2. **In bundles.** A bundle MAY carry a proof of the source Service's current local manifest ([bundle content](bundle.md#1-bundle-content)). An endpoint includes one when the peer's copy is older than the local manifest, as reported in sync requests and in the peer's queue metadata ([endpoint obligations](endpoint-sync.md#5-endpoint-obligations)). The receiving Service applies the update rule of Section 4.
 
 At channel setup the verifier MUST reject a manifest whose `service_address` differs from the returned `service_address`, and a supplied manifest proof that yields `version` 0 ([verifyConfig](verifier-interface.md#2-verifyconfig)). In a bundle it MUST reject a manifest whose `service_address` differs from the `service_address` of the channel context, and MUST NOT return a manifest with `version` 0 ([verifyBundle](verifier-interface.md#3-verifybundle)). How each ledger's manifest is proven is defined by its proof schemes ([ledgers](../ledgers/README.md)).
 
 ## 6. Endpoint discovery
 
-A channel's peer manifest is the only source of peer endpoints that this specification defines. A CLPR Endpoint chooses which peer endpoints to contact from it ([Blueprint](../blueprint/clpr-service.md#53-peer-selection)) and contacts them through [endpoint sync](endpoint-sync/README.md). An endpoint that only initiates syncs (Section 1) cannot be contacted.
+A channel's peer manifest is the only source of peer endpoints that this specification defines. A CLPR Endpoint chooses which peer endpoints to contact from it ([Blueprint](../blueprint/clpr-service.md#53-peer-selection)) and contacts them through [endpoint sync](endpoint-sync.md). An endpoint that only initiates syncs (Section 1) cannot be contacted.
 
 Other means of discovery are outside this specification. An implementation MAY use them, since any caller can submit a bundle.
 

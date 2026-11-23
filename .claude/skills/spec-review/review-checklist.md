@@ -16,7 +16,8 @@
 - The rule is stated once, in its owning module. Other places link to it.
 - No other module, ledger document or Blueprint section now contradicts the change. Search for the field, term or function name across the tree.
 - Pseudocode and prose agree, and the pseudocode follows [protocol/conventions.md](../../../protocol/conventions.md).
-- Schema changes in `protocol/schema/` or `protocol/endpoint-sync/schema/` match the prose: field numbers, types and deprecation marks.
+- Schema changes in `protocol/schema/` or a `ledgers/` `schema/` directory match the prose: field numbers, types and deprecation marks.
+- A `README.md` only orients: it says what its directory holds and lists the files. It states no rule; any rule in it is at least S2 and moves to a named document.
 - Terms are used as [clpr-overview.md §7](../../../clpr-overview.md#7-vocabulary) defines them.
 - Every changed heading still matches the links to it (`tools/spec_lint.py` checks this).
 

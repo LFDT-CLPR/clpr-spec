@@ -18,7 +18,7 @@ CLPR adds no intermediary network, bridge validator set or token. Each ledger ve
 | **Verifier contract** | A stateless contract, fixed when a channel is opened, that checks the peer ledger's proofs. | [Verifier interface](protocol/verifier-interface.md) |
 | **Message** | One unit of communication on a channel: application data, a reply, or a control message. | [Messaging](protocol/messaging.md) |
 | **Bundle** | The proven state of one side of a channel, usually with a contiguous run of messages from its outbound queue. | [Bundle](protocol/bundle.md) |
-| **CLPR Endpoint** | A node that exchanges bundles with endpoints of the peer ledger and submits received bundles to its own ledger. | [Endpoint sync](protocol/endpoint-sync/README.md) |
+| **CLPR Endpoint** | A node that exchanges bundles with endpoints of the peer ledger and submits received bundles to its own ledger. | [Endpoint sync](protocol/endpoint-sync.md) |
 | **Connector** | An economic actor on both ledgers of a channel. It authorizes messages on the source ledger and pays for their execution on the destination. Its stake can be slashed. | [Connector setup](protocol/connector-setup.md) |
 | **Application** | A contract that sends and receives messages through the CLPR Service. | [Messaging §6](protocol/messaging.md#6-delivery-to-the-application) |
 
@@ -94,8 +94,8 @@ The normative content is in three categories: the **Protocol**, required of ever
 | Bundle content | [protocol/bundle.md](protocol/bundle.md) |
 | Verifier contracts and trust anchors | [protocol/verifier-interface.md](protocol/verifier-interface.md) |
 | Channel status and bundle processing | [protocol/channel-state-transitions.md](protocol/channel-state-transitions.md) |
-| Communication between endpoints | [protocol/endpoint-sync/](protocol/endpoint-sync/README.md) |
-| Encodings of message payloads and channel status | [protocol/schema/](protocol/schema/README.md) |
+| Communication between endpoints | [protocol/endpoint-sync.md](protocol/endpoint-sync.md) |
+| Encodings of message payloads, channel status and endpoint sync messages | [protocol/schema.md](protocol/schema.md) |
 | Known open design questions | [protocol/open-issues.md](protocol/open-issues.md) |
 | Ledgers, verifier APIs and proof schemes | [ledgers/](ledgers/README.md) |
 | CLPR Service design and administration | [blueprint/clpr-service.md](blueprint/clpr-service.md) |
@@ -127,7 +127,7 @@ Terms other than the [major parts](#2-major-parts):
 | Queue metadata | The sender's proven queue position, carried in every bundle that carries messages. | [Bundle §2](protocol/bundle.md#2-queue-metadata) |
 | Partial bundle | A bundle that ends before the sender's last queued message. | [Bundle §3](protocol/bundle.md#3-partial-bundles) |
 | Trust anchor | The data, stored with the channel, against which the verifier checks proofs. | [Verifier interface §1](protocol/verifier-interface.md#1-verifier-contracts-and-trust-anchors) |
-| Endpoint sync | The protocol CLPR Endpoints use to exchange bundles. | [Endpoint sync §1](protocol/endpoint-sync/README.md#1-purpose-and-roles) |
+| Endpoint sync | The protocol CLPR Endpoints use to exchange bundles. | [Endpoint sync §1](protocol/endpoint-sync.md#1-purpose-and-roles) |
 | Verifier API | A ledger's concrete binding of the verifier interface. | [Ledgers](ledgers/README.md) |
 | Proof scheme | What is proven about bundle content, how, and how it is verified. | [Ledgers](ledgers/README.md) |
 | Bundle aggregation | How an endpoint gathers bundle content from its ledger's state. | [Ledgers](ledgers/README.md) |

@@ -13,7 +13,7 @@ This proof scheme proves Besu CLPR Service state under QBFT seals, and follows v
 
 ## 2. Trust model
 
-This scheme is for Besu networks that keep the validator set in a **validator contract** (QBFT contract validator selection): an array of addresses in the contract's storage. A bundle proves values in the CLPR Service's storage at a final block `H` ([proven storage layout](../README.md#3-proven-storage-layout)).
+This scheme is for Besu networks that keep the validator set in a **validator contract** (QBFT contract validator selection): an array of addresses in the contract's storage. A bundle proves values in the CLPR Service's storage at a final block `H` ([proven storage layout](../ledger.md#3-proven-storage-layout)).
 
 The validators of block `N` are the set held by the validator contract in the state of block `N − 1`. The verifier trusts a set `T` and follows changes through **hops**: the blocks at which the set changes. A hop is sealed by the outgoing set, and its state holds the incoming set. A hop is accepted only if a quorum of the current set sealed it; the set proven in its state then becomes current. Any number of members can change at one hop.
 
@@ -26,7 +26,7 @@ In addition to the abstract bundle content, a producer collects:
 - the member list of the anchored set;
 - for every block after the anchored block and before `H` whose state changes the validator contract's array: its header and a proof of the array in its state;
 - a proof of the validator contract's array in the state of `H`;
-- the proofs of the CLPR Service state at `H` ([Besu §3.6](../README.md#36-producing-the-state-proofs)).
+- the proofs of the CLPR Service state at `H` ([Besu §3.6](../ledger.md#36-producing-the-state-proofs)).
 
 ## 4. Wire layout
 
@@ -36,9 +36,9 @@ The bundle is an RLP list of 5 items, or 7 when it carries the endpoint manifest
 |---|---|---|
 | 0 | Header of `H` | RLP list of at least 15 header fields |
 | 1 | Validator source | RLP list `[trustedSet, hops, contractProof]` |
-| 2 | Account proof | [Proof encoding](../README.md#34-proof-encoding) |
-| 3 | Channel storage proof | [Proof encoding](../README.md#34-proof-encoding) |
-| 4 | Bundle content | [Proof encoding](../README.md#34-proof-encoding) |
+| 2 | Account proof | [Proof encoding](../ledger.md#34-proof-encoding) |
+| 3 | Channel storage proof | [Proof encoding](../ledger.md#34-proof-encoding) |
+| 4 | Bundle content | [Proof encoding](../ledger.md#34-proof-encoding) |
 | 5 | Manifest storage proof | 7-item form only |
 | 6 | Manifest preimage | 7-item form only |
 
@@ -53,15 +53,15 @@ A **validator contract proof** is a byte string holding the RLP list `[validator
 | Index | Item | Encoding |
 |---|---|---|
 | 0 | `validatorContract` | 20-byte address |
-| 1 | `accountProof` | Account proof of `validatorContract` ([proof encoding](../README.md#34-proof-encoding)) |
+| 1 | `accountProof` | Account proof of `validatorContract` ([proof encoding](../ledger.md#34-proof-encoding)) |
 | 2 | `arraySlot` | 32-byte slot of the validator array |
 | 3 | `storageProof` | Storage proof of the array length slot and of every element slot; at most 257 entries |
 
-The array has the Solidity dynamic-array layout: its length `N` is at `arraySlot`, and element `i` (from 0) is at slot `keccak256(arraySlot) + i` ([Besu §3](../README.md#3-proven-storage-layout)), holding an address in its low 160 bits.
+The array has the Solidity dynamic-array layout: its length `N` is at `arraySlot`, and element `i` (from 0) is at slot `keccak256(arraySlot) + i` ([Besu §3](../ledger.md#3-proven-storage-layout)), holding an address in its low 160 bits.
 
 ## 5. Encoding algorithm
 
-The pseudocode of this scheme uses the operations of [Besu §3.4](../README.md#34-proof-encoding) (`RLP`, `decode RLPList`) and the header functions of [Besu §4.2](../README.md#42-qbft-headers-and-seals) (`headerAt`, `number`, `stateRoot`).
+The pseudocode of this scheme uses the operations of [Besu §3.4](../ledger.md#34-proof-encoding) (`RLP`, `decode RLPList`) and the header functions of [Besu §4.2](../ledger.md#42-qbft-headers-and-seals) (`headerAt`, `number`, `stateRoot`).
 
 ```
 function ContractProof(b):                       // the validator contract proof for the state of block b
@@ -84,7 +84,7 @@ bundle := RLP(items)
 
 `validatorContract` and `arraySlot` are those of the anchor, and `N` is the array length at `b`.
 
-`number(H)` MUST be greater than `A`. The state proofs, content and manifest items are built as in [Besu §3.6](../README.md#36-producing-the-state-proofs).
+`number(H)` MUST be greater than `A`. The state proofs, content and manifest items are built as in [Besu §3.6](../ledger.md#36-producing-the-state-proofs).
 
 The contract proof for the state of `H` MAY carry no storage entries when the validator contract's storage root at `H` equals its storage root at the last hop, or at `A` when there are no hops.
 
@@ -178,7 +178,7 @@ function verifyBundle(proof, anchor, ctx):
     return (metadata, payloads, newAnchor, newAnchorId, manifest)
 ```
 
-`StorageValue` and `VerifyServiceState` are defined in [Besu §3.5](../README.md#35-verifying-the-clpr-service-state), and `RequireQuorum` in [Besu §4.2](../README.md#42-qbft-headers-and-seals). The account proof in `ResolveSet` is walked as in `VerifyServiceState`, and an absent account is rejected. Sets are lists of distinct addresses, compared without regard to order.
+`StorageValue` and `VerifyServiceState` are defined in [Besu §3.5](../ledger.md#35-verifying-the-clpr-service-state), and `RequireQuorum` in [Besu §4.2](../ledger.md#42-qbft-headers-and-seals). The account proof in `ResolveSet` is walked as in `VerifyServiceState`, and an absent account is rejected. Sets are lists of distinct addresses, compared without regard to order.
 
 **Hiero built-in verifier.** In bundles, Hiero's built-in verifier accepts at most 32 hops, and rejects a header of `H` or a hop header that lists validators. When the peer is a Hiero ledger, a producer SHOULD keep within these limits.
 
@@ -216,7 +216,7 @@ A verifier MUST reject the bundle when:
 | The number of `H` is not greater than the last hop's, or than `A` when there are no hops. |
 | A hop header or the header of `H` fails `RequireQuorum` against the current set. |
 | A validator contract proof is not a byte string holding a 4-item list, names another contract or array slot, has an invalid or absent account, has more than 257 storage entries, proves a length of 0 or more than 256, a zero member or duplicate members, or a code hash other than `validatorCodeHash`. |
-| Any condition of [Besu §3.5](../README.md#35-verifying-the-clpr-service-state). |
+| Any condition of [Besu §3.5](../ledger.md#35-verifying-the-clpr-service-state). |
 
 ## 9. Configuration and manifest proofs
 
@@ -264,4 +264,4 @@ The initial trust anchor is `RLP([0x01, RLP(V in ascending byte order), serviceA
 
 ### 9.2 Manifest proof
 
-The manifest proof is the [configuration-time manifest proof](../README.md#43-configuration-time-manifest-proof), checked against the initial validator set. Its header MUST have at least 15 fields.
+The manifest proof is the [configuration-time manifest proof](../ledger.md#43-configuration-time-manifest-proof), checked against the initial validator set. Its header MUST have at least 15 fields.

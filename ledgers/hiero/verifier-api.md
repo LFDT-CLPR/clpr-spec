@@ -116,7 +116,7 @@ The return values of `verifyBundle` ([§2](#2-functions)) carry no last-message 
 | `received_message_id`, `received_running_hash` | `receivedMessageId`, `receivedRunningHash` |
 | `status` | `status`: the channel status number (PENDING 0, ACTIVE 1, PAUSED 2, CLOSING 3, DRAINED 4, CLOSED 5) |
 | `endpoint_manifest_version` | `endpointManifestVersion` |
-| Message payloads | `payloads`: each a serialized message payload as defined in the [Protocol schema](../../protocol/schema/README.md), in ascending message id order |
+| Message payloads | `payloads`: each a serialized message payload as defined in the [Protocol schema](../../protocol/schema.md), in ascending message id order |
 | New trust anchor and trust anchor id | `newTrustAnchor`, `newTrustAnchorId` |
 | New endpoint manifest | `newEndpointManifest` |
 
@@ -141,7 +141,7 @@ The CLPR Service takes the bundle's first message id as `nextMessageId − n`, w
 
 | Aspect | Rule |
 |---|---|
-| Target | The channel's verifier contract: a built-in verifier ([list](README.md#3-built-in-verifiers)) or a deployed contract. The verifier is fixed when the channel is created. |
+| Target | The channel's verifier contract: a built-in verifier ([list](ledger.md#3-built-in-verifiers)) or a deployed contract. The verifier is fixed when the channel is created. |
 | Call kind | An ordinary contract call, made by the CLPR Service. A verifier MUST NOT modify CLPR Service state ([verifier interface §1](../../protocol/verifier-interface.md#1-verifier-contracts-and-trust-anchors)). |
 | Gas | The CLPR Service supplies a fixed gas limit to each call, set by its verifier gas limit [service parameter](../../blueprint/clpr-service.md#42-service-parameters). |
 | Payer | The call is made on behalf of the payer of the transaction that triggered it: the channel registrant for `verifyConfig`, the bundle submitter for `verifyBundle`. No separate fee is charged for the call. |

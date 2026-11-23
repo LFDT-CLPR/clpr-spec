@@ -6,7 +6,7 @@ This document defines the Solidity interface through which an EVM CLPR Service c
 
 ## 1. Scope
 
-It binds the [verifier interface](../../protocol/verifier-interface.md) to the EVM. Every verifier contract deployed on a ledger of the [EVM family](README.md#1-members) MUST implement `IClprVerifier` as defined here, and the CLPR Service of such a ledger MUST call verifier contracts only through it. A verifier contract combines this API with one proof scheme of the source ledger, which defines the content of the proof bytes and of the trust anchor.
+It binds the [verifier interface](../../protocol/verifier-interface.md) to the EVM. Every verifier contract deployed on a ledger of the [EVM family](ledger-family.md#1-members) MUST implement `IClprVerifier` as defined here, and the CLPR Service of such a ledger MUST call verifier contracts only through it. A verifier contract combines this API with one proof scheme of the source ledger, which defines the content of the proof bytes and of the trust anchor.
 
 ## 2. Functions
 

@@ -2,7 +2,7 @@
 
 > **Category:** Protocol · **Version:** v0.2 · **Last changed:** v0.2
 
-A **bundle** carries proven state of one side of a channel, the **source**, to the CLPR Service of the other side, the **destination**. This module defines the abstract content of a bundle and what a proof scheme proves about it (Section 4). The bundle's wire layout and proof material are defined by the source ledger's proof scheme; its delivery between endpoints by [endpoint sync](endpoint-sync/README.md); its processing by [channel state transitions](channel-state-transitions.md#2-bundle-processing).
+A **bundle** carries proven state of one side of a channel, the **source**, to the CLPR Service of the other side, the **destination**. This module defines the abstract content of a bundle and what a proof scheme proves about it (Section 4). The bundle's wire layout and proof material are defined by the source ledger's proof scheme; its delivery between endpoints by [endpoint sync](endpoint-sync.md); its processing by [channel state transitions](channel-state-transitions.md#2-bundle-processing).
 
 ## 1. Bundle content
 
@@ -37,7 +37,7 @@ A bundle with no messages is valid. It can carry any combination of queue metada
 
 Informational fields MUST NOT cause a change of state at the destination. They inform the destination's endpoints.
 
-The id of the trust anchor that the source holds for the destination is informational. It has no field in the queue metadata above. Endpoints report it, unproven, in their sync requests ([exchange](endpoint-sync/README.md#31-messages)). A proof scheme MAY prove it. A verifier need not return it, and like the other informational fields it does not change state at the destination.
+The id of the trust anchor that the source holds for the destination is informational. It has no field in the queue metadata above. Endpoints report it, unproven, in their sync requests ([exchange](endpoint-sync.md#31-messages)). A proof scheme MAY prove it. A verifier need not return it, and like the other informational fields it does not change state at the destination.
 
 The queue counters these fields report are defined in [messaging](messaging.md#2-message-identifiers-and-queue).
 
@@ -49,7 +49,7 @@ A bundle need not carry every message the source has not yet delivered. Its run 
 - `last_message_id < metadata.next_message_id` always holds.
 - When `last_message_id = metadata.next_message_id − 1`, the bundle reaches the source's latest message, and `last_message_running_hash = metadata.sent_running_hash`.
 
-The run is bounded by the destination's `max_messages_per_bundle` and `max_sync_bytes` ([throttles](ledger-configuration.md#3-throttles)). Where the run starts is defined in [message range](endpoint-sync/README.md#4-message-range). Two different lower bounds apply to its start:
+The run is bounded by the destination's `max_messages_per_bundle` and `max_sync_bytes` ([throttles](ledger-configuration.md#3-throttles)). Where the run starts is defined in [message range](endpoint-sync.md#4-message-range). Two different lower bounds apply to its start:
 
 - **Source side.** The first message has an id greater than the source's proven `acked_message_id`. A verifier rejects a bundle that breaks this bound ([verifyBundle](verifier-interface.md#3-verifybundle)).
 - **Destination side.** The run can start with messages whose ids are at most the destination's `received_message_id`. The destination accepts such a bundle and skips those messages ([bundle processing](channel-state-transitions.md#2-bundle-processing) Step 6).

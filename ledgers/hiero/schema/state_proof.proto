@@ -4,7 +4,7 @@ syntax = "proto3";
 package clpr.v0_2;
 
 // A proof of Hiero state items under a signed block root.
-// Meaning: ledgers/hiero/proof-schemes/hints-wraps/README.md §4.
+// Meaning: ledgers/hiero/proof-schemes/hints-wraps.md §4.
 message StateProof {
   repeated MerklePath paths = 1;
   oneof proof {

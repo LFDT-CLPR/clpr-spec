@@ -6,7 +6,7 @@ package proto;
 
 import "protocol/schema/clpr_channel_status.proto";
 
-// The endpoint sync service. Behavior: protocol/endpoint-sync/README.md.
+// The endpoint sync service. Behavior: protocol/endpoint-sync.md.
 service ClprEndpointService {
   // One stream is one sync cycle for one channel.
   rpc sync(stream ClprSyncPayload) returns (stream ClprSyncPayload);

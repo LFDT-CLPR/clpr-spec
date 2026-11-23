@@ -13,7 +13,7 @@ This proof scheme proves Besu CLPR Service state under QBFT seals, and follows v
 
 ## 2. Trust model
 
-This scheme is for Besu networks whose block headers list the validator set (QBFT block-header validator selection). A bundle proves values in the CLPR Service's storage at a final block `H` ([proven storage layout](../README.md#3-proven-storage-layout)).
+This scheme is for Besu networks whose block headers list the validator set (QBFT block-header validator selection). A bundle proves values in the CLPR Service's storage at a final block `H` ([proven storage layout](../ledger.md#3-proven-storage-layout)).
 
 The verifier trusts a validator set `T`. It follows changes to the set through **hops**: headers of the blocks between the anchored block and `H` at which the listed set changes. Besu applies at most one validator change per block, so each accepted header moves the trusted set by at most one member, and it is accepted only if enough members of the trusted set sealed it (header rule below).
 
@@ -31,7 +31,7 @@ The verifier trusts a validator set `T`. It follows changes to the set through *
 
 3. **Own quorum.** At least `ceil(2 × |L_h| / 3)` distinct members of `L_h` sealed the header.
 
-When `L_h` equals `T` the rule is `RequireQuorum(header, T)` ([Besu §4.2](../README.md#42-qbft-headers-and-seals)).
+When `L_h` equals `T` the rule is `RequireQuorum(header, T)` ([Besu §4.2](../ledger.md#42-qbft-headers-and-seals)).
 
 To forge a bundle an attacker must hold the keys of a quorum of the trusted set, or move the set one member at a time with almost a quorum of trusted keys at each step. Sets of one or two validators have no fault tolerance. The account proof pins the CLPR Service's code hash, so a Service whose code changes needs a new channel.
 
@@ -40,7 +40,7 @@ To forge a bundle an attacker must hold the keys of a quorum of the trusted set,
 In addition to the abstract bundle content, a producer collects:
 - the RLP header of `H`;
 - the member list of the anchored set, and the headers of every block after the anchored block and before `H` whose listed set differs from the previous block's;
-- the proofs of the CLPR Service state at `H` ([Besu §3.6](../README.md#36-producing-the-state-proofs)).
+- the proofs of the CLPR Service state at `H` ([Besu §3.6](../ledger.md#36-producing-the-state-proofs)).
 
 ## 4. Wire layout
 
@@ -50,9 +50,9 @@ The bundle is an RLP list of 5 items, or 7 when it carries the endpoint manifest
 |---|---|---|
 | 0 | Header of `H` | RLP list of at least 15 header fields |
 | 1 | Validator source | RLP list `[trustedSet, hops]` |
-| 2 | Account proof | [Proof encoding](../README.md#34-proof-encoding) |
-| 3 | Channel storage proof | [Proof encoding](../README.md#34-proof-encoding) |
-| 4 | Bundle content | [Proof encoding](../README.md#34-proof-encoding) |
+| 2 | Account proof | [Proof encoding](../ledger.md#34-proof-encoding) |
+| 3 | Channel storage proof | [Proof encoding](../ledger.md#34-proof-encoding) |
+| 4 | Bundle content | [Proof encoding](../ledger.md#34-proof-encoding) |
 | 5 | Manifest storage proof | 7-item form only |
 | 6 | Manifest preimage | 7-item form only |
 
@@ -63,7 +63,7 @@ The bundle is an RLP list of 5 items, or 7 when it carries the endpoint manifest
 
 ## 5. Encoding algorithm
 
-The pseudocode of this scheme uses the operations of [Besu §3.4](../README.md#34-proof-encoding) (`RLP`, `decode RLPList`) and the header functions of [Besu §4.2](../README.md#42-qbft-headers-and-seals) (`headerAt`, `number`, `stateRoot`).
+The pseudocode of this scheme uses the operations of [Besu §3.4](../ledger.md#34-proof-encoding) (`RLP`, `decode RLPList`) and the header functions of [Besu §4.2](../ledger.md#42-qbft-headers-and-seals) (`headerAt`, `number`, `stateRoot`).
 
 ```
 A := the anchored block number (the peer's trust anchor id)
@@ -78,7 +78,7 @@ if the manifest is included then
 bundle := RLP(items)
 ```
 
-`number(H)` MUST be greater than `A`. The state proofs, content and manifest items are built as in [Besu §3.6](../README.md#36-producing-the-state-proofs).
+`number(H)` MUST be greater than `A`. The state proofs, content and manifest items are built as in [Besu §3.6](../ledger.md#36-producing-the-state-proofs).
 
 A producer MAY leave out a block that changes the listed set, as long as every hop it carries lists a set different from the set before it and passes the header rule against it. A producer MAY bound the number of hops in one bundle. When more blocks after `A` change the listed set than that bound allows, `H` is the first such block after the last hop carried, and the peer catches up over several bundles.
 
@@ -151,7 +151,7 @@ function verifyBundle(proof, anchor, ctx):
     return (metadata, payloads, newAnchor, newAnchorId, manifest)
 ```
 
-`Signers`, `Quorum` and `RequireQuorum` are defined in [Besu §4.2](../README.md#42-qbft-headers-and-seals), and `VerifyServiceState` in [Besu §3.5](../README.md#35-verifying-the-clpr-service-state). Sets are lists of distinct addresses, compared without regard to order. A verifier MAY reject a header that lists a validator more than once.
+`Signers`, `Quorum` and `RequireQuorum` are defined in [Besu §4.2](../ledger.md#42-qbft-headers-and-seals), and `VerifyServiceState` in [Besu §3.5](../ledger.md#35-verifying-the-clpr-service-state). Sets are lists of distinct addresses, compared without regard to order. A verifier MAY reject a header that lists a validator more than once.
 
 ## 7. Trust anchor changes
 
@@ -183,7 +183,7 @@ A verifier MUST reject the bundle when:
 | A hop lists the same set as the set it is checked against. |
 | The number of `H` is not greater than the last hop's, or than `A` when there are no hops. |
 | A header fails the header rule: a set is empty or has more than 256 members, the sets differ by more than one member, the trust link or own quorum is not reached, there are no seals, or a seal is not 65 bytes or does not recover. |
-| Any condition of [Besu §3.5](../README.md#35-verifying-the-clpr-service-state). |
+| Any condition of [Besu §3.5](../ledger.md#35-verifying-the-clpr-service-state). |
 
 ## 9. Configuration and manifest proofs
 
@@ -231,11 +231,11 @@ A verifier MUST reject the configuration proof when it is empty, is not an RLP l
 - `ledger_configuration` (field 2) supplies the configuration values that `verifyConfig` returns. They are registration inputs, as in the RLP form.
 - `current_block_header` (field 3) holds a header of at least 15 fields. `V` is the validator set it lists, and the header MUST pass `RequireQuorum(header, V)`.
 - `clpr_service_account_proof` (field 4) is required. It proves the account of the configuration's service address under the header's `stateRoot`, and `codeHash` is that account's code hash.
-- When `clpr_service_storage_proofs` (field 5) holds an entry for slot 25 ([Besu §3.1](../README.md#31-service-slots)), the proven value MUST be the configuration's service address.
+- When `clpr_service_storage_proofs` (field 5) holds an entry for slot 25 ([Besu §3.1](../ledger.md#31-service-slots)), the proven value MUST be the configuration's service address.
 - `genesis_block_header` (field 1) is ignored.
 
 The initial trust anchor is `RLP([0x00, RLP(V in ascending byte order), serviceAddress, codeHash, be(number(header), 8)])`, and its id is `be(number(header), 8)`. A verifier MUST reject the proof when it does not decode, when field 2 or field 3 is absent, when the header fails `RequireQuorum`, or when the account or slot 25 proof fails.
 
 ### 9.2 Manifest proof
 
-The manifest proof is the [configuration-time manifest proof](../README.md#43-configuration-time-manifest-proof), checked against the initial validator set. Its header MUST have at least 15 fields.
+The manifest proof is the [configuration-time manifest proof](../ledger.md#43-configuration-time-manifest-proof), checked against the initial validator set. Its header MUST have at least 15 fields.

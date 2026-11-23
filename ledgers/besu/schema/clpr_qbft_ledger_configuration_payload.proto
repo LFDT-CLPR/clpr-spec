@@ -5,13 +5,13 @@ package clpr.v0_2;
 
 import "protocol/schema/clpr_ledger_configuration.proto";
 
-// A Besu block header. Encoding: ledgers/besu/README.md §4.2.
+// A Besu block header. Encoding: ledgers/besu/ledger.md §4.2.
 message BlockHeader {
   // The RLP list of the header's fields.
   bytes rlp = 1;
 }
 
-// A proof of one storage slot. Encoding: ledgers/besu/README.md §3.4.
+// A proof of one storage slot. Encoding: ledgers/besu/ledger.md §3.4.
 message StorageProofEntry {
   // Slot number, big-endian.
   bytes key = 1;

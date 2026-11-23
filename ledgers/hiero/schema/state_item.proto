@@ -9,7 +9,7 @@ import "ledgers/hiero/schema/clpr_channel.proto";
 import "ledgers/hiero/schema/clpr_message_queue.proto";
 
 // A leaf of the Hiero state tree.
-// Meaning: ledgers/hiero/proof-schemes/hints-wraps/README.md §4.2.
+// Meaning: ledgers/hiero/proof-schemes/hints-wraps.md §4.2.
 message StateItem {
   StateKey key = 2;
   StateValue value = 3;

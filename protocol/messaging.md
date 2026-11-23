@@ -58,7 +58,7 @@ Messages are received in id order, with no gaps, and each message is processed e
 
 ## 3. Payload encoding
 
-Every ledger uses one data format for messages. The **payload bytes** of a message are the [canonical protobuf encoding](schema/README.md#2-encoding-rules) of its `ClprMessagePayload`. A CLPR Service MUST store and hash its outbound payloads in that encoding. The running hash (Section 4) is computed over these bytes.
+Every ledger uses one data format for messages. The **payload bytes** of a message are the [canonical protobuf encoding](schema.md#2-encoding-rules) of its `ClprMessagePayload`. A CLPR Service MUST store and hash its outbound payloads in that encoding. The running hash (Section 4) is computed over these bytes.
 
 A canonical payload has exactly one encoding, so decoding and re-encoding it reproduces the same bytes. This is what keeps the running hash the same on both ledgers:
 - A CLPR Endpoint or verifier that carries a payload MUST deliver the canonical bytes. It MAY copy them, or decode the payload and re-encode it canonically.

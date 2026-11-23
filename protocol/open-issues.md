@@ -8,7 +8,7 @@ This document lists known open design questions. The modules each issue affects 
 
 **Problem.** When a channel is opened, `verifyConfig` returns the peer's chain id, CLPR Service address, configuration timestamp, throttles, initial trust anchor and trust anchor id, and endpoint manifest ([Verifier interface §2](verifier-interface.md#2-verifyconfig)). The channel stores them as its initial peer state ([Channel setup §5](channel-setup.md#5-initial-peer-state)). The Protocol does not state which of these values the configuration proof must authenticate against the peer ledger's committed state, and which a verifier can accept as supplied. The initial trust anchor raises a further question: a proof can only be checked against an anchor that is already trusted, so unless the verifier fixes the expected anchor itself, the initial anchor is accepted on first use and must be checked out of band.
 
-**Current behavior.** The Protocol leaves this to each proof scheme. The [hinTS with WRAPS](../ledgers/hiero/proof-schemes/hints-wraps/README.md) scheme verifies the configuration against a ledger id that the verifier holds. The [hinTS](../ledgers/hiero/proof-schemes/hints/README.md), [QBFT header](../ledgers/besu/proof-schemes/qbft-header.md) and [QBFT contract](../ledgers/besu/proof-schemes/qbft-contract.md) schemes take the initial authority from the configuration proof itself, so the registrant chooses it. Channel users rely on the registrant's choice of verifier and on their own checks of the channel ([Overview §4](../clpr-overview.md#4-trust-model)).
+**Current behavior.** The Protocol leaves this to each proof scheme. The [hinTS with WRAPS](../ledgers/hiero/proof-schemes/hints-wraps.md) scheme verifies the configuration against a ledger id that the verifier holds. The [hinTS](../ledgers/hiero/proof-schemes/hints.md), [QBFT header](../ledgers/besu/proof-schemes/qbft-header.md) and [QBFT contract](../ledgers/besu/proof-schemes/qbft-contract.md) schemes take the initial authority from the configuration proof itself, so the registrant chooses it. Channel users rely on the registrant's choice of verifier and on their own checks of the channel ([Overview §4](../clpr-overview.md#4-trust-model)).
 
 **Options.**
 1. The Protocol states, for each value `verifyConfig` returns, whether the configuration proof must authenticate it. Each proof scheme's configuration proof section states how its proof does so.
@@ -52,7 +52,7 @@ This document lists known open design questions. The modules each issue affects 
 1. Keep peer preference as the only mitigation.
 2. Pay the sending endpoint a share of the destination charge. Bundles would then have to identify the sending endpoint in proven form.
 
-**Affected modules.** [Channel economics](../blueprint/channel-economics.md), [CLPR Service §5](../blueprint/clpr-service.md#5-bundle-submission), and, for option 2, [Bundle §1](bundle.md#1-bundle-content) and [Endpoint sync](endpoint-sync/README.md).
+**Affected modules.** [Channel economics](../blueprint/channel-economics.md), [CLPR Service §5](../blueprint/clpr-service.md#5-bundle-submission), and, for option 2, [Bundle §1](bundle.md#1-bundle-content) and [Endpoint sync](endpoint-sync.md).
 
 ## OI-5. Calibration of the connector stake
 
@@ -93,7 +93,7 @@ This document lists known open design questions. The modules each issue affects 
 
 ## OI-8. hinTS and WRAPS verification parameters
 
-**Problem.** The hinTS with WRAPS proof scheme describes the signature layout, the encodings of curve points and the checks a verifier performs ([hinTS with WRAPS §4.4](../ledgers/hiero/proof-schemes/hints-wraps/README.md#44-block-signature) and [§6](../ledgers/hiero/proof-schemes/hints-wraps/README.md#6-decode-and-verify-algorithm)). It does not give the WRAPS verification key, the Poseidon parameters, the internal layout of the compressed WRAPS proof and how its public inputs bind the ledger id and the hinTS verification key, or the full hinTS verification steps. Without them, a verifier for this scheme cannot be built from the specification alone.
+**Problem.** The hinTS with WRAPS proof scheme describes the signature layout, the encodings of curve points and the checks a verifier performs ([hinTS with WRAPS §4.4](../ledgers/hiero/proof-schemes/hints-wraps.md#44-block-signature) and [§6](../ledgers/hiero/proof-schemes/hints-wraps.md#6-decode-and-verify-algorithm)). It does not give the WRAPS verification key, the Poseidon parameters, the internal layout of the compressed WRAPS proof and how its public inputs bind the ledger id and the hinTS verification key, or the full hinTS verification steps. Without them, a verifier for this scheme cannot be built from the specification alone.
 
 **Current behavior.** The scheme does not state these parameters, so an independent verifier cannot be built from the specification alone.
 
@@ -101,4 +101,4 @@ This document lists known open design questions. The modules each issue affects 
 1. Specify the parameters, the WRAPS proof layout and the hinTS verification steps in the scheme.
 2. Reference a published specification of hinTS and WRAPS that defines them.
 
-**Affected modules.** [hinTS with WRAPS](../ledgers/hiero/proof-schemes/hints-wraps/README.md) and, for the hinTS verification steps, [hinTS](../ledgers/hiero/proof-schemes/hints/README.md).
+**Affected modules.** [hinTS with WRAPS](../ledgers/hiero/proof-schemes/hints-wraps.md) and, for the hinTS verification steps, [hinTS](../ledgers/hiero/proof-schemes/hints.md).

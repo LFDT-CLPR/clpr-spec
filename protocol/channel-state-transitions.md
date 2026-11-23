@@ -191,7 +191,7 @@ Closing takes both sides of a channel through CLOSING and DRAINED to CLOSED, so 
 
 Condition 3 is needed because a bundle can end before the peer's latest message ([partial bundles](bundle.md#3-partial-bundles)): the peer's status alone does not show that its REPLY messages to this side have arrived.
 
-**CLOSED.** Terminal. Every bundle and every `sendMessage` call is rejected. CLPR Endpoints no longer start sync cycles for the channel. As responders they MAY still send a bundle that reports CLOSED, which lets a DRAINED peer reach CLOSED ([rules](endpoint-sync/README.md#32-rules)).
+**CLOSED.** Terminal. Every bundle and every `sendMessage` call is rejected. CLPR Endpoints no longer start sync cycles for the channel. As responders they MAY still send a bundle that reports CLOSED, which lets a DRAINED peer reach CLOSED ([rules](endpoint-sync.md#32-rules)).
 
 There is no close notification. A bundle whose `md.status` is CLOSED is processed like any other: it moves an ACTIVE or PAUSED side to CLOSING, and a DRAINED side to CLOSED when the conditions above hold. If no such bundle reaches a DRAINED side, the recovery path is administrative.
 

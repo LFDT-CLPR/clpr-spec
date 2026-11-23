@@ -2,11 +2,11 @@
 
 > **Category:** Ledger Specification (Besu) · **Applies to:** v0.2 · **Revision:** 1
 
-This document defines how a Besu CLPR Endpoint gathers the [abstract bundle content](../../protocol/bundle.md#1-bundle-content) for one channel in answer to a peer's request. The channel's proof scheme then proves and encodes it, with the state proofs of [Besu §3.6](README.md#36-producing-the-state-proofs). Storage positions are those of the [proven storage layout](README.md#3-proven-storage-layout).
+This document defines how a Besu CLPR Endpoint gathers the [abstract bundle content](../../protocol/bundle.md#1-bundle-content) for one channel in answer to a peer's request. The channel's proof scheme then proves and encodes it, with the state proofs of [Besu §3.6](ledger.md#36-producing-the-state-proofs). Storage positions are those of the [proven storage layout](ledger.md#3-proven-storage-layout).
 
 ## 1. Inputs
 
-The endpoint builds a bundle for channel `channelId` from the peer's `BundleRequest` ([Endpoint sync §3](../../protocol/endpoint-sync/README.md#3-exchange)). The peer fills it from its own record of the channel.
+The endpoint builds a bundle for channel `channelId` from the peer's `BundleRequest` ([Endpoint sync §3](../../protocol/endpoint-sync.md#3-exchange)). The peer fills it from its own record of the channel.
 
 | Field | Meaning | Used for |
 |---|---|---|
@@ -37,9 +37,9 @@ messages := the first n of messages
 - With the qbft-epoch scheme, when the bundle carries more than one epoch boundary header (`k > 1` in [qbft-epoch §5](proof-schemes/qbft-epoch.md#5-encoding-algorithm)), the endpoint SHOULD select no messages.
 - If the encoded bundle would exceed the peer's `max_sync_bytes`, the endpoint shortens the range or sends nothing.
 
-The range rules, including those for a requestor that misreports `current_received_message_id`, are in [Endpoint sync §4](../../protocol/endpoint-sync/README.md#4-message-range).
+The range rules, including those for a requestor that misreports `current_received_message_id`, are in [Endpoint sync §4](../../protocol/endpoint-sync.md#4-message-range).
 
-The queue metadata is the channel record's fields at `H` ([Bundle §2](../../protocol/bundle.md#2-queue-metadata)). It is also written to field 1 of the bundle content ([Besu §3.4](README.md#34-proof-encoding)). When messages are included, the last message id and running hash are those of the last message selected.
+The queue metadata is the channel record's fields at `H` ([Bundle §2](../../protocol/bundle.md#2-queue-metadata)). It is also written to field 1 of the bundle content ([Besu §3.4](ledger.md#34-proof-encoding)). When messages are included, the last message id and running hash are those of the last message selected.
 
 ## 4. Manifest inclusion
 

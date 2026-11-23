@@ -108,7 +108,7 @@ A verifier MAY accept several consecutive changes in one bundle, verifying each 
 
 **Compatibility.** A source ledger can be used with CLPR only if, whenever its signing authority changes, a proof can be built that is verifiable by an authority in the current trust anchor and contains a proven commitment to the new authority.
 
-The Protocol sets no deadline for submitting a trust anchor change. When a trust anchor holds a single authority, proofs from the previous authority stop verifying as soon as the change is accepted. Endpoint obligations for keeping the peer's trust anchor current are defined in [endpoint sync](endpoint-sync/README.md#5-endpoint-obligations); each proof scheme defines when its trust anchor changes.
+The Protocol sets no deadline for submitting a trust anchor change. When a trust anchor holds a single authority, proofs from the previous authority stop verifying as soon as the change is accepted. Endpoint obligations for keeping the peer's trust anchor current are defined in [endpoint sync](endpoint-sync.md#5-endpoint-obligations); each proof scheme defines when its trust anchor changes.
 
 ## 5. Rejection
 

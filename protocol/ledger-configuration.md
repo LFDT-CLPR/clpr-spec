@@ -30,7 +30,7 @@ A ledger's configuration is changed only by its own CLPR Service administration 
 
 ## 3. Throttles
 
-`Throttles` are the limits a ledger publishes in its configuration. They are ledger-wide: the same values apply to every peer and every channel, and each channel enforces them independently. The last column of the table below states which side applies each limit, and with which ledger's value. A receiving ledger checks its own limits during [bundle processing](channel-state-transitions.md#2-bundle-processing); it MAY also count a violation as misbehavior ([endpoint sync](endpoint-sync/README.md#6-misbehavior)).
+`Throttles` are the limits a ledger publishes in its configuration. They are ledger-wide: the same values apply to every peer and every channel, and each channel enforces them independently. The last column of the table below states which side applies each limit, and with which ledger's value. A receiving ledger checks its own limits during [bundle processing](channel-state-transitions.md#2-bundle-processing); it MAY also count a violation as misbehavior ([endpoint sync](endpoint-sync.md#6-misbehavior)).
 
 Each ledger keeps, per channel, a copy of the **peer throttles**: set from `verifyConfig` at [channel setup](channel-setup.md#5-initial-peer-state) and replaced by each accepted ConfigUpdate (Section 5).
 

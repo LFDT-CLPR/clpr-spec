@@ -11,6 +11,8 @@ Rules:
   link        a relative link points to a missing file or heading anchor
   header      a Protocol module or Ledger Specification lacks its header,
               or a Protocol module lacks its History section
+  readme      a README.md in protocol/, ledgers/ or blueprint/ carries a header
+              or an RFC 2119 keyword (a README orients; it states no rules)
   blueprint   MUST appears in the Blueprint
   keyword     an RFC 2119 keyword appears in a non-normative document
   history     version, EAP, implementation-status or "not yet specified" wording
@@ -103,7 +105,20 @@ def check_links(root, rel):
                 report(rel, number, "link", f"missing anchor: {target}")
 
 
+def check_readme(root, rel):
+    if os.path.basename(rel) != "README.md" or rel.split(os.sep)[0] not in NORMATIVE_DIRS:
+        return
+    for number, line in prose_lines(os.path.join(root, rel)):
+        if line.startswith("> **Category:**"):
+            report(rel, number, "readme", "header in a README (a README orients; move the text to a named document)")
+        m = KEYWORDS.search(strip_code_spans(line))
+        if m:
+            report(rel, number, "readme", f"RFC 2119 keyword in a README: {m.group(0)} (move the rule to a named document)")
+
+
 def check_headers(root, rel):
+    if os.path.basename(rel) == "README.md":
+        return
     lines = list(prose_lines(os.path.join(root, rel)))
     header = next((text for _, text in lines if text.startswith("> ")), "")
     top = rel.split(os.sep)[0]
@@ -150,6 +165,7 @@ def main():
     for rel in markdown_files(root):
         check_links(root, rel)
         check_headers(root, rel)
+        check_readme(root, rel)
         check_wording(root, rel)
     check_clips(root)
     for finding in findings:

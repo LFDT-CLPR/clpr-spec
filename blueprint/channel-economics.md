@@ -31,7 +31,7 @@ Ledgers differ in how `execution_cost` is measured.
 - `execution_cost` is the flat `messageExecutionCost` plus the cost of the gas the application call uses. The worst-case charge is `messageExecutionCost × (1 + endpointMarginPercent / 100)` plus the cost of the call's gas limit; the margin applies to the flat part only.
 - The worst-case charge is collected before dispatch, and the cost of unused gas is refunded to the connector afterwards.
 - The connector is underfunded when its contract's balance is below the worst-case charge.
-- The application call's gas limit is defined in [Hiero §6.3](../ledgers/hiero/README.md#63-application-callbacks). A limit of 0 gives APPLICATION_ERROR, with no charge.
+- The application call's gas limit is defined in [Hiero §6.3](../ledgers/hiero/ledger.md#63-application-callbacks). A limit of 0 gives APPLICATION_ERROR, with no charge.
 - Delivering a REPLY to the source application is charged to the source connector, for the callback's gas. The callback is skipped when the connector cannot prepay that gas.
 
 **On EVM ledgers:**
@@ -51,7 +51,7 @@ If a transfer to the submitter fails, the Service MAY pay the [administrator](cl
 
 - On Hiero, the submitter is the payer of the `submitBundle` transaction, normally the node that received the bundle ([who submits](clpr-service.md#51-who-submits)). The Service transfers the charge directly from the connector contract's account to the submitter, and pays slash proceeds from the escrow account, capped at its balance ([proceeds](stakes-and-bonds.md#23-proceeds)). There is no administrator fallback.
 - On EVM ledgers, the steps are:
-  1. The Service calls the connector contract's `payForExecution(amount)` with a gas limit of `connectorPaymentGasLimit`. The connector interface is in the [EVM family](../ledgers/evm/README.md#3-application-and-connector-interfaces).
+  1. The Service calls the connector contract's `payForExecution(amount)` with a gas limit of `connectorPaymentGasLimit`. The connector interface is in the [EVM family](../ledgers/evm/ledger-family.md#3-application-and-connector-interfaces).
   2. The payment succeeds only if the Service's balance rises by exactly `amount`.
   3. The Service forwards the payment to the submitter, falling back to the administrator. If that also fails, it credits a pending withdrawal to the submitter, which the submitter collects with `collectPending`.
 

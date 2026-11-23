@@ -6,7 +6,7 @@ package clpr.v0_2;
 import "ledgers/hiero/schema/state_proof.proto";
 
 // The envelope of every hinTS proof. Meaning and encoding rules:
-// ledgers/hiero/proof-schemes/hints/README.md §4.
+// ledgers/hiero/proof-schemes/hints.md §4.
 message HieroProof {
   // MUST be 1.
   uint32 format_version = 1;
