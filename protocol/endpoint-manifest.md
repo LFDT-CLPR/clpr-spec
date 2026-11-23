@@ -41,7 +41,7 @@ Each CLPR Service maintains one **local manifest**: the `EndpointManifest` of it
 - The number of endpoints MUST NOT exceed the ledger's `max_local_endpoints` when that is non-zero ([throttles](ledger-configuration.md#3-throttles)).
 - Any caller MAY read the current local manifest. It is part of the Service state that the ledger's proof schemes can prove to peers (Section 5).
 
-How endpoints are admitted to and removed from the local manifest is a deployment choice ([Blueprint](../blueprint/clpr-service.md#3-endpoint-admission)).
+How endpoints are admitted to and removed from the local manifest is a deployment choice ([Recommendations](../recommendations/clpr-service.md#3-endpoint-admission)).
 
 ## 4. Peer manifest
 
@@ -66,7 +66,7 @@ At channel setup the verifier MUST reject a manifest whose `service_address` dif
 
 ## 6. Endpoint discovery
 
-A channel's peer manifest is the only source of peer endpoints that this specification defines. A CLPR Endpoint chooses which peer endpoints to contact from it ([Blueprint](../blueprint/clpr-service.md#53-peer-selection)) and contacts them through [endpoint sync](endpoint-sync.md). An endpoint that only initiates syncs (Section 1) cannot be contacted.
+A channel's peer manifest is the only source of peer endpoints that this specification defines. A CLPR Endpoint chooses which peer endpoints to contact from it ([Recommendations](../recommendations/clpr-service.md#53-peer-selection)) and contacts them through [endpoint sync](endpoint-sync.md). An endpoint that only initiates syncs (Section 1) cannot be contacted.
 
 Other means of discovery are outside this specification. An implementation MAY use them, since any caller can submit a bundle.
 

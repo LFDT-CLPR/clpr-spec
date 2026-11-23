@@ -1,6 +1,6 @@
 # Stakes and Bonds
 
-> **Category:** Blueprint (SHOULD)
+> **Category:** Recommendations (SHOULD)
 
 This document describes the recommended design of the stake that a connector locks against misbehavior, and the slashing of that stake. Stakes are local to each ledger and never cross the wire. Parameter defaults are listed in the [Service parameters](clpr-service.md#42-service-parameters).
 

@@ -1,6 +1,6 @@
 # Channel Economics
 
-> **Category:** Blueprint (SHOULD)
+> **Category:** Recommendations (SHOULD)
 
 This document describes the recommended design of who pays for message execution, who is paid, and how the outbound queue is shared among connectors. Parameter defaults are listed in the [Service parameters](clpr-service.md#42-service-parameters).
 

@@ -143,7 +143,7 @@ The CLPR Service takes the bundle's first message id as `nextMessageId − n`, w
 |---|---|
 | Target | The channel's verifier contract: a built-in verifier ([list](ledger.md#3-built-in-verifiers)) or a deployed contract. The verifier is fixed when the channel is created. |
 | Call kind | An ordinary contract call, made by the CLPR Service. A verifier MUST NOT modify CLPR Service state ([verifier interface §1](../../protocol/verifier-interface.md#1-verifier-contracts-and-trust-anchors)). |
-| Gas | The CLPR Service supplies a fixed gas limit to each call, set by its verifier gas limit [service parameter](../../blueprint/clpr-service.md#42-service-parameters). |
+| Gas | The CLPR Service supplies a fixed gas limit to each call, set by its verifier gas limit [service parameter](../../recommendations/clpr-service.md#42-service-parameters). |
 | Payer | The call is made on behalf of the payer of the transaction that triggered it: the channel registrant for `verifyConfig`, the bundle submitter for `verifyBundle`. No separate fee is charged for the call. |
 | Result | The call succeeds only if it completes without reverting, returns a non-empty result, and the result decodes as the return type above. Each element of `payloads` MUST decode as a message payload. |
 | Failure | Any other outcome is a verification failure. For `verifyConfig` the registration fails with `CLPR_VERIFIER_CONFIG_FAILED`. For `verifyBundle` the submission fails with `CLPR_BUNDLE_VERIFICATION_FAILED`, and the bundle has no effect on the channel. |

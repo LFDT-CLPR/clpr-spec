@@ -26,7 +26,7 @@ A ledger is identified by a **chain id**: a CAIP-2 identifier of the form `names
 | `initial_trust_anchor` | `bytes` | The trust anchor with which a verifier starts trusting this ledger. A ledger whose proof schemes take the initial trust anchor from the configuration MUST populate it, and its Ledger Specifications state when it is populated. It is empty when every proof scheme of the ledger derives the initial trust anchor from other proof material in the configuration proof. A configuration that lacks the trust anchor a proof scheme takes from it cannot complete a channel that uses that scheme. See [verifier interface](verifier-interface.md#2-verifyconfig). |
 | `initial_trust_anchor_id` | `bytes` | An opaque identifier of `initial_trust_anchor`, in a format defined by the proof scheme. It MUST be non-empty if and only if `initial_trust_anchor` is non-empty. |
 
-A ledger's configuration is changed only by its own CLPR Service administration ([Blueprint](../blueprint/clpr-service.md#2-administration)). Each change sets `timestamp` to the consensus time of the changing transaction.
+A ledger's configuration is changed only by its own CLPR Service administration ([Recommendations](../recommendations/clpr-service.md#2-administration)). Each change sets `timestamp` to the consensus time of the changing transaction.
 
 ## 3. Throttles
 
@@ -51,7 +51,7 @@ Constraints on a ledger's own configuration:
 
 Limits are published so that a peer is never penalized for a reason it cannot determine from the published configuration.
 
-Default values are deployment choices ([Blueprint](../blueprint/clpr-service.md#4-configuration-parameters)).
+Default values are deployment choices ([Recommendations](../recommendations/clpr-service.md#4-configuration-parameters)).
 
 ## 4. Protocol version
 
@@ -87,7 +87,7 @@ Each channel records `last_config_timestamp`: the `timestamp` of the last config
 - When the CLPR Service processes a bundle on a channel on which a ConfigUpdate is due, and the channel is ACTIVE at Step 12 of [bundle processing](channel-state-transitions.md#2-bundle-processing), it MUST enqueue the ConfigUpdate at that step.
 - When it enqueues a ConfigUpdate, the CLPR Service sets the channel's `last_config_timestamp` to the configuration's `timestamp`.
 
-How the CLPR Service finds the channels on which an update is due is a deployment choice ([Blueprint](../blueprint/clpr-service.md#14-enqueue)).
+How the CLPR Service finds the channels on which an update is due is a deployment choice ([Recommendations](../recommendations/clpr-service.md#14-enqueue)).
 
 Because the ConfigUpdate occupies a position in the queue fixed by consensus, both ledgers agree on the point in the message stream at which the new configuration takes effect.
 

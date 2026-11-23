@@ -132,7 +132,7 @@ The remaining bytes of the key and signature are the commitments and openings of
 
 ### 4.5 Limits
 
-The scheme sets no maximum number of paths or bundle size. A verifier MAY bound the number of paths, or the gas, it accepts. A receiving deployment then sets its throttles within that bound ([configuration parameters](../../../blueprint/clpr-service.md#4-configuration-parameters)).
+The scheme sets no maximum number of paths or bundle size. A verifier MAY bound the number of paths, or the gas, it accepts. A receiving deployment then sets its throttles within that bound ([configuration parameters](../../../recommendations/clpr-service.md#4-configuration-parameters)).
 
 ### 4.6 Decoding
 

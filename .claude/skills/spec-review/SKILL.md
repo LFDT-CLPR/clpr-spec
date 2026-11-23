@@ -16,7 +16,7 @@ Ask for any that are missing:
 
 ## Steps
 
-1. **Collect the change.** Get the diff, for example `git diff <base>...<branch> -- protocol ledgers blueprint clpr-overview.md`. List each changed file and its category.
+1. **Collect the change.** Get the diff, for example `git diff <base>...<branch> -- protocol ledgers recommendations clpr-overview.md`. List each changed file and its category.
 2. **Run the mechanical checks** with `python3 tools/spec_lint.py`, and include its findings in the report.
 3. **Review independently.** Where the agent supports subagents, give each reviewer below the diff, the intent and the files to read, but not your own opinion of the change. Otherwise, do the passes yourself one at a time. Each pass uses [review-checklist.md](review-checklist.md):
    - **A. Normative strength and category.** Every keyword change, new or removed requirement, and the category each rule now sits in.

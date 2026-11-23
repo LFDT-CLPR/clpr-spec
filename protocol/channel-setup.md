@@ -104,7 +104,7 @@ The trust anchor and its id are stored with the channel and change only as defin
 
 ## 6. Shared channel state
 
-The fields below are the channel state that the peer proves or consumes. Which of them the peer's verifier proves, and how each reaches the peer, is defined in [queue metadata](bundle.md#2-queue-metadata) and [proof requirements](bundle.md#4-proof-requirements). The structure is logical; how each ledger stores and proves it is ledger-specific ([ledgers](../ledgers/README.md)). All other channel state is internal to the CLPR Service ([Blueprint](../blueprint/clpr-service.md#1-structure-and-internal-state)).
+The fields below are the channel state that the peer proves or consumes. Which of them the peer's verifier proves, and how each reaches the peer, is defined in [queue metadata](bundle.md#2-queue-metadata) and [proof requirements](bundle.md#4-proof-requirements). The structure is logical; how each ledger stores and proves it is ledger-specific ([ledgers](../ledgers/README.md)). All other channel state is internal to the CLPR Service ([Recommendations](../recommendations/clpr-service.md#1-structure-and-internal-state)).
 
 | Field | Type | Meaning | Initial value |
 |---|---|---|---|

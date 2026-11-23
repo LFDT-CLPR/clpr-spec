@@ -19,7 +19,7 @@ Start with the [overview](clpr-overview.md). It describes the parts of CLPR and 
 |---|---|---|
 | [Protocol](protocol/) | MUST | Interoperability across all ledgers |
 | [Ledger Specifications](ledgers/README.md) | MUST for one ledger | Verifier APIs, bundle aggregation and proof schemes |
-| [Blueprint](blueprint/) | SHOULD | Recommended design of a CLPR deployment |
+| [Recommendations](recommendations/) | SHOULD | Recommended design of a CLPR deployment |
 
 **Protocol modules**
 
@@ -41,7 +41,7 @@ Start with the [overview](clpr-overview.md). It describes the parts of CLPR and 
 
 **Ledger Specifications:** [Hiero](ledgers/hiero/README.md), [Besu](ledgers/besu/README.md), and the [EVM family](ledgers/evm/README.md). See the [index](ledgers/README.md).
 
-**Blueprint:** [CLPR Service](blueprint/clpr-service.md), [stakes and bonds](blueprint/stakes-and-bonds.md), [channel economics](blueprint/channel-economics.md).
+**Recommendations:** [CLPR Service](recommendations/clpr-service.md), [stakes and bonds](recommendations/stakes-and-bonds.md), [channel economics](recommendations/channel-economics.md).
 
 ## Changing the specification
 

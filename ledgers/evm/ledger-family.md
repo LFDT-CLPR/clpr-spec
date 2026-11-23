@@ -24,7 +24,7 @@ An EVM CLPR Service calls applications and connectors through the interfaces bel
 
 On an EVM ledger, an application's identity (the `sender` of a message it sends, and the `targetApplication` of a message addressed to it) is its 20-byte address.
 
-The gas parameters named below are CLPR Service configuration ([Configuration parameters](../../blueprint/clpr-service.md#4-configuration-parameters)); charges are defined in [Channel economics](../../blueprint/channel-economics.md#1-execution-charges).
+The gas parameters named below are CLPR Service configuration ([Configuration parameters](../../recommendations/clpr-service.md#4-configuration-parameters)); charges are defined in [Channel economics](../../recommendations/channel-economics.md#1-execution-charges).
 
 ### 3.1 Applications
 
@@ -199,7 +199,7 @@ interface IClprService {
 | `completeChannel` | The reveal of [channel registration](../../protocol/channel-setup.md#22-completechannel). `salt` derives the channel id (Section 4); `sig` is the registration signature (Section 5). |
 | `closeChannel` | [Administrative close](../../protocol/channel-state-transitions.md#5-closing-and-draining) of the channel `channelIdOrCommitment`, or, for a PENDING channel, removal of the channel whose ownership commitment is `channelIdOrCommitment`. Privileged. |
 | `registerConnector` | The commit of [connector registration](../../protocol/connector-setup.md#2-registration). |
-| `completeConnector` | The reveal of [connector registration](../../protocol/connector-setup.md#2-registration). With a native fee asset, the call value is the connector's stake ([Blueprint](../../blueprint/stakes-and-bonds.md#1-connector-stake)). With an ERC-20 fee asset, the Service takes the minimum stake from the caller with `transferFrom`, and the call carries no value. |
+| `completeConnector` | The reveal of [connector registration](../../protocol/connector-setup.md#2-registration). With a native fee asset, the call value is the connector's stake ([Recommendations](../../recommendations/stakes-and-bonds.md#1-connector-stake)). With an ERC-20 fee asset, the Service takes the minimum stake from the caller with `transferFrom`, and the call carries no value. |
 | `removeConnector` | [Connector removal](../../protocol/connector-setup.md#5-removal). Only the connector's `admin` can call it. The connector's remaining stake goes to `recipient`. |
 | `sendMessage` | [Enqueue](../../protocol/messaging.md#5-enqueue). |
 | `submitBundle` | [Bundle processing](../../protocol/channel-state-transitions.md#2-bundle-processing). |

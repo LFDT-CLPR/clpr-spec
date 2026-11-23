@@ -7,14 +7,14 @@
 - Each rule sits in the right category:
   - **Protocol:** what every ledger must do to interoperate.
   - **Ledger Specification:** what one ledger's verifier API, bundle aggregation or proof scheme requires.
-  - **Blueprint:** a recommended design, with no MUST.
-- A rule moved into the Blueprint loses its force. Flag it unless the request said so.
+  - **Recommendations:** the advised design of a deployment, with no MUST.
+- A rule moved into the Recommendations loses its force. Flag it unless the request said so.
 - Non-normative documents (`clpr-overview.md`, `protocol/open-issues.md`) contain no keywords and no requirements.
 
 ## B. Consistency
 
 - The rule is stated once, in its owning module. Other places link to it.
-- No other module, ledger document or Blueprint section now contradicts the change. Search for the field, term or function name across the tree.
+- No other module, ledger document or section of the Recommendations now contradicts the change. Search for the field, term or function name across the tree.
 - Pseudocode and prose agree, and the pseudocode follows [protocol/conventions.md](../../../protocol/conventions.md).
 - Schema changes in `protocol/schema/` or a `ledgers/` `schema/` directory match the prose: field numbers, types and deprecation marks.
 - A `README.md` only orients: it says what its directory holds and lists the files. It states no rule; any rule in it is at least S2 and moves to a named document.
@@ -30,7 +30,7 @@
 
 ## D. Editorial and reads as a whole
 
-- No version numbers, earlier drafts, "now", "no longer", "not yet specified", or implementation status appear in `protocol/`, `ledgers/` or `blueprint/` prose.
+- No version numbers, earlier drafts, "now", "no longer", "not yet specified", or implementation status appear in `protocol/`, `ledgers/` or `recommendations/` prose.
 - Rules are stated in the present tense, one per sentence, with defined terms.
 - Explanation belongs in the overview or the CLIP, not in normative text, unless one clause is needed for clarity.
 - No security weakness, private name or unverifiable claim appears.

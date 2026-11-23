@@ -1,6 +1,6 @@
 # CLPR Service
 
-> **Category:** Blueprint (SHOULD)
+> **Category:** Recommendations (SHOULD)
 
 This document describes the recommended design of a CLPR Service beyond the shared channel state. A deployment can depart from it without affecting interoperability. Notes beginning "On Hiero" or "On EVM ledgers" record ledger-specific choices.
 

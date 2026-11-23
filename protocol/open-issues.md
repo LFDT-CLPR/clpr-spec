@@ -33,30 +33,30 @@ This document lists known open design questions. The modules each issue affects 
 
 **Problem.** A channel PAUSED by a response ordering violation stays PAUSED until the peer corrects its replies, and a channel closed from PAUSED cannot drain until then ([Channel state transitions §5–6](channel-state-transitions.md#5-closing-and-draining)). If the peer never corrects them, or the channel was closed because its verifier is no longer trusted, DATA messages sent on it might never receive a REPLY. Applications cannot learn the outcome of those messages within the protocol, and a connector with messages in flight cannot be removed ([Connector setup §5](connector-setup.md#5-removal)).
 
-**Current behavior.** The channel stays PAUSED or CLOSING indefinitely. Applications reconcile the affected messages out of band. The recovery scenarios are in [CLPR Service §7](../blueprint/clpr-service.md#7-recovery-scenarios).
+**Current behavior.** The channel stays PAUSED or CLOSING indefinitely. Applications reconcile the affected messages out of band. The recovery scenarios are in [CLPR Service §7](../recommendations/clpr-service.md#7-recovery-scenarios).
 
 **Options.**
 1. Keep out-of-band reconciliation, and define standard queries that list a channel's messages without replies.
 2. A forced close by the CLPR Service administrator that ends the channel without draining and resolves each message in flight locally, for example with a dedicated reply status ([Messaging §7](messaging.md#7-replies)).
 3. Move undelivered messages and pending replies to a new channel to the same peer.
 
-**Affected modules.** [Channel state transitions](channel-state-transitions.md), [Messaging §7](messaging.md#7-replies), [Connector setup §5](connector-setup.md#5-removal), [CLPR Service §2 and §7](../blueprint/clpr-service.md#2-administration).
+**Affected modules.** [Channel state transitions](channel-state-transitions.md), [Messaging §7](messaging.md#7-replies), [Connector setup §5](connector-setup.md#5-removal), [CLPR Service §2 and §7](../recommendations/clpr-service.md#2-administration).
 
 ## OI-4. Compensation for sending bundles
 
-**Problem.** A CLPR Endpoint is paid only for bundles it submits to its own ledger ([Channel economics §2](../blueprint/channel-economics.md#2-payment-to-the-bundle-submitter)). Building proofs and serving bundles to the peer is unpaid. An endpoint can therefore receive without sending and leave the sending work to others. On a ledger that mostly sends and rarely receives, the margin earned on received messages might not pay for endpoint participation.
+**Problem.** A CLPR Endpoint is paid only for bundles it submits to its own ledger ([Channel economics §2](../recommendations/channel-economics.md#2-payment-to-the-bundle-submitter)). Building proofs and serving bundles to the peer is unpaid. An endpoint can therefore receive without sending and leave the sending work to others. On a ledger that mostly sends and rarely receives, the margin earned on received messages might not pay for endpoint participation.
 
-**Current behavior.** Endpoints prefer peers that deliver bundles to them ([CLPR Service §5](../blueprint/clpr-service.md#5-bundle-submission)), so endpoints that never send find fewer peers. Nothing else compensates sending.
+**Current behavior.** Endpoints prefer peers that deliver bundles to them ([CLPR Service §5](../recommendations/clpr-service.md#5-bundle-submission)), so endpoints that never send find fewer peers. Nothing else compensates sending.
 
 **Options.**
 1. Keep peer preference as the only mitigation.
 2. Pay the sending endpoint a share of the destination charge. Bundles would then have to identify the sending endpoint in proven form.
 
-**Affected modules.** [Channel economics](../blueprint/channel-economics.md), [CLPR Service §5](../blueprint/clpr-service.md#5-bundle-submission), and, for option 2, [Bundle §1](bundle.md#1-bundle-content) and [Endpoint sync](endpoint-sync.md).
+**Affected modules.** [Channel economics](../recommendations/channel-economics.md), [CLPR Service §5](../recommendations/clpr-service.md#5-bundle-submission), and, for option 2, [Bundle §1](bundle.md#1-bundle-content) and [Endpoint sync](endpoint-sync.md).
 
 ## OI-5. Calibration of the connector stake
 
-**Problem.** A connector's locked stake has to cover the worst-case losses its messages can cause: on the destination, the execution cost of messages that arrive while it is underfunded; on the source, the penalties for failure replies ([Stakes and bonds §1](../blueprint/stakes-and-bonds.md#1-connector-stake)). If the stake is too small, a connector can authorize a burst of messages that costs endpoints more than slashing recovers. The specification sets no method for choosing the minimum stake.
+**Problem.** A connector's locked stake has to cover the worst-case losses its messages can cause: on the destination, the execution cost of messages that arrive while it is underfunded; on the source, the penalties for failure replies ([Stakes and bonds §1](../recommendations/stakes-and-bonds.md#1-connector-stake)). If the stake is too small, a connector can authorize a burst of messages that costs endpoints more than slashing recovers. The specification sets no method for choosing the minimum stake.
 
 **Current behavior.** Each CLPR Service enforces a configured minimum stake. The minimum is not derived from the connector's possible exposure.
 
@@ -64,7 +64,7 @@ This document lists known open design questions. The modules each issue affects 
 1. Derive the minimum stake from the throttles that bound exposure, such as queue depth and maximum gas per message, and from the execution price.
 2. Limit each connector's messages in flight so that their worst-case cost stays within its stake.
 
-**Affected modules.** [Stakes and bonds §1–2](../blueprint/stakes-and-bonds.md#1-connector-stake), [Channel economics §3](../blueprint/channel-economics.md#3-queue-quotas), [Ledger configuration §3](ledger-configuration.md#3-throttles).
+**Affected modules.** [Stakes and bonds §1–2](../recommendations/stakes-and-bonds.md#1-connector-stake), [Channel economics §3](../recommendations/channel-economics.md#3-queue-quotas), [Ledger configuration §3](ledger-configuration.md#3-throttles).
 
 ## OI-6. QBFT epoch catch-up across a validator change
 

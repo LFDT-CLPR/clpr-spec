@@ -53,7 +53,7 @@ The record of channel `channelId` starts at slot `base = keccak256(channelId ‖
 | `base + 5` | 0–255 | `received_running_hash` (`bytes32`) |
 | `base + 16` | 0–63 | `endpoint_manifest_version` (`uint64`) |
 
-`status` uses the values of the [ChannelStatus encoding](../evm/verifier-api.md#33-enumerations). The fields are defined in [Channel setup §6](../../protocol/channel-setup.md#6-shared-channel-state), except the reply cursor ([Blueprint §1.5](../../blueprint/clpr-service.md#15-reply-and-acknowledgement-bookkeeping)).
+`status` uses the values of the [ChannelStatus encoding](../evm/verifier-api.md#33-enumerations). The fields are defined in [Channel setup §6](../../protocol/channel-setup.md#6-shared-channel-state), except the reply cursor ([CLPR Service §1.5](../../recommendations/clpr-service.md#15-reply-and-acknowledgement-bookkeeping)).
 
 ### 3.3 Message running hash
 

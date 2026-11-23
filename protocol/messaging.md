@@ -97,7 +97,7 @@ The CLPR Service MUST reject the call, with no change to state, if any of the fo
 | 4 | The payload bytes (Section 3) of the DATA message to be enqueued exceed the peer's `max_message_payload_bytes` ([throttles](ledger-configuration.md#3-throttles)). |
 | 5 | After the send, the outbound queue would hold more than the local `max_queue_depth` messages that the peer has not acknowledged (`next_message_id − 1 − acked_message_id`), counting the DATA message and any ConfigUpdate enqueued with it ([throttles](ledger-configuration.md#3-throttles)). |
 
-A CLPR Service MAY apply further limits, such as per-connector queue quotas ([Blueprint](../blueprint/channel-economics.md#3-queue-quotas)).
+A CLPR Service MAY apply further limits, such as per-connector queue quotas ([Recommendations](../recommendations/channel-economics.md#3-queue-quotas)).
 
 Otherwise the CLPR Service:
 
@@ -113,12 +113,12 @@ The CLPR Service appends REPLY and CONTROL messages to the outbound queue in the
 When the destination CLPR Service processes a DATA message ([bundle processing](channel-state-transitions.md#2-bundle-processing)), it:
 
 1. Resolves `connector_id` to the connector with that id on the channel. If none exists, the outcome is CONNECTOR_NOT_FOUND ([connectors on both ledgers](connector-setup.md#3-connectors-on-both-ledgers)).
-2. Applies its charging policy to the connector ([Blueprint](../blueprint/channel-economics.md#1-execution-charges)). If the connector cannot pay, the outcome is CONNECTOR_UNDERFUNDED.
+2. Applies its charging policy to the connector ([Recommendations](../recommendations/channel-economics.md#1-execution-charges)). If the connector cannot pay, the outcome is CONNECTOR_UNDERFUNDED.
 3. Otherwise invokes `target_application` with the channel id, `sender` and `message_data`, with an execution budget of at most the local `max_gas_per_message`. If the invocation succeeds, the outcome is SUCCESS and the application's return data becomes `message_reply_data`. If the target is not an application, or the invocation fails, the outcome is APPLICATION_ERROR. If the return data would make the REPLY exceed the peer's `max_message_payload_bytes` ([throttles](ledger-configuration.md#3-throttles)), the outcome is APPLICATION_ERROR, with empty `message_reply_data`.
 
 When the source CLPR Service processes a REPLY, it delivers `message_id`, `status` and `message_reply_data` to the application that sent the DATA message (its `sender`). Delivery is best effort: a failure of the application, or a `sender` that cannot be invoked, does not affect processing of the REPLY.
 
-The callback interface, return convention and budget mechanics are defined by each ledger's Ledger Specifications ([ledgers](../ledgers/README.md)). Data from another ledger is untrusted input to the application ([Blueprint §6.5](../blueprint/clpr-service.md#65-application-payloads)).
+The callback interface, return convention and budget mechanics are defined by each ledger's Ledger Specifications ([ledgers](../ledgers/README.md)). Data from another ledger is untrusted input to the application ([CLPR Service §6.5](../recommendations/clpr-service.md#65-application-payloads)).
 
 ## 7. Replies
 
@@ -133,7 +133,7 @@ Every DATA message receives **exactly one REPLY**. The destination CLPR Service 
 | CONNECTOR_NOT_FOUND | No connector with the message's `connector_id` exists on the channel at the destination. |
 | CONNECTOR_UNDERFUNDED | The destination connector could not pay for execution. |
 
-On receiving a REPLY, the source CLPR Service applies its charging and slashing policy according to the status ([Blueprint](../blueprint/stakes-and-bonds.md#2-slashing-and-bans)). CONNECTOR_NOT_FOUND and CONNECTOR_UNDERFUNDED are attributable to the source connector; the other statuses are not.
+On receiving a REPLY, the source CLPR Service applies its charging and slashing policy according to the status ([Recommendations](../recommendations/stakes-and-bonds.md#2-slashing-and-bans)). CONNECTOR_NOT_FOUND and CONNECTOR_UNDERFUNDED are attributable to the source connector; the other statuses are not.
 
 ## 8. Response ordering
 

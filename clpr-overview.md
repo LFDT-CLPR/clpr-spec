@@ -13,7 +13,7 @@ CLPR adds no intermediary network, bridge validator set or token. Each ledger ve
 | Part | What it is | Defined in |
 |---|---|---|
 | **Ledger** | A distributed ledger with smart contracts and state proofs. It runs at least one CLPR Service (exactly one on Hiero). | [Ledgers](ledgers/README.md) |
-| **CLPR Service** | The component that implements CLPR on a ledger and holds its CLPR state: a native service on Hiero, a smart contract on EVM ledgers. | [CLPR Service](blueprint/clpr-service.md) |
+| **CLPR Service** | The component that implements CLPR on a ledger and holds its CLPR state: a native service on Hiero, a smart contract on EVM ledgers. | [CLPR Service](recommendations/clpr-service.md) |
 | **Channel** | A connection between the CLPR Services of two ledgers, with the same id on both. Each side has an outbound queue and a verifier contract. Several channels can connect the same ledgers. | [Channel setup](protocol/channel-setup.md) |
 | **Verifier contract** | A stateless contract, fixed when a channel is opened, that checks the peer ledger's proofs. | [Verifier interface](protocol/verifier-interface.md) |
 | **Message** | One unit of communication on a channel: application data, a reply, or a control message. | [Messaging](protocol/messaging.md) |
@@ -36,9 +36,9 @@ A message from an application on ledger A to an application on ledger B:
 4. An endpoint of B submits the bundle to B in an ordinary transaction.
 5. B's CLPR Service passes the bundle and the channel's stored trust anchor to the channel's verifier contract, which checks the proof and returns the messages and the sender's queue metadata. The Service checks the message ids and the running hash itself.
 6. For each DATA message, the Service checks that the connector exists on B and can pay. It calls the target application with a gas limit, charges the connector for the execution plus a margin, paid to the bundle submitter, and appends a REPLY to its own outbound queue.
-7. A later sync carries the REPLY to A, and A's Service delivers it to the sending application. Some ledgers also charge the connector on A for that delivery ([Channel economics §1](blueprint/channel-economics.md#1-execution-charges)). The queue metadata in a bundle also acknowledges the messages its sender has received.
+7. A later sync carries the REPLY to A, and A's Service delivers it to the sending application. Some ledgers also charge the connector on A for that delivery ([Channel economics §1](recommendations/channel-economics.md#1-execution-charges)). The queue metadata in a bundle also acknowledges the messages its sender has received.
 
-Every DATA message receives exactly one REPLY, in the order of the original messages. If the connector on B is missing or cannot pay, B replies with a failure instead of calling the application, and the connector's stake is slashed. Repeated failures lead to a ban from the channel ([Stakes and bonds §2](blueprint/stakes-and-bonds.md#2-slashing-and-bans)).
+Every DATA message receives exactly one REPLY, in the order of the original messages. If the connector on B is missing or cannot pay, B replies with a failure instead of calling the application, and the connector's stake is slashed. Repeated failures lead to a ban from the channel ([Stakes and bonds §2](recommendations/stakes-and-bonds.md#2-slashing-and-bans)).
 
 CONTROL messages travel in the same queues and carry configuration updates to the peer.
 
@@ -60,7 +60,7 @@ An application that sends a message through CLPR trusts:
 
 **No confidentiality.** CLPR provides integrity and authenticity. Endpoint sync can run over TLS, which protects data in transit; it authenticates the endpoint only when the client verifies its certificate. Payloads are stored in plaintext on both ledgers.
 
-Recommendations for applications and deployments are in [CLPR Service §6](blueprint/clpr-service.md#6-security-considerations).
+Recommendations for applications and deployments are in [CLPR Service §6](recommendations/clpr-service.md#6-security-considerations).
 
 ## 5. Roles
 
@@ -73,7 +73,7 @@ Recommendations for applications and deployments are in [CLPR Service §6](bluep
 | **Endpoint operator** | Runs CLPR Endpoints, which sync with peers and submit bundles | Serves all channels of its ledger | Pays transaction fees; earns the margin on executed messages |
 | **CLPR Service administrator** | Configures the CLPR Service, admits endpoints where admission is curated, closes channels | Acts when a channel is compromised | None |
 
-On Hiero, every consensus node is a CLPR Endpoint. On EVM ledgers, endpoints register and are admitted by the administrator. Endpoints are not slashed. The administrator cannot open channels or register connectors. Charges and penalties go to the bundle submitter ([Channel economics §2](blueprint/channel-economics.md#2-payment-to-the-bundle-submitter)).
+On Hiero, every consensus node is a CLPR Endpoint. On EVM ledgers, endpoints register and are admitted by the administrator. Endpoints are not slashed. The administrator cannot open channels or register connectors. Charges and penalties go to the bundle submitter ([Channel economics §2](recommendations/channel-economics.md#2-payment-to-the-bundle-submitter)).
 
 Each role vets those it depends on, in proportion to the value it puts at risk. To open a route, a verifier developer publishes a verifier; a connector operator vets it, opens the channel and registers a connector on both ledgers; an application developer vets the channel and connector. To withdraw, a connector operator stops authorizing messages, waits until its messages in flight are answered, and removes the connector on both ledgers ([Connector setup §5](protocol/connector-setup.md#5-removal)).
 
@@ -81,7 +81,7 @@ Adding a ledger needs no change to the Protocol or to other ledgers: its contrib
 
 ## 6. How the specification is organized
 
-The normative content is in three categories: the **Protocol**, required of every implementation; the **Ledger Specifications**, required of anyone interoperating with that ledger; and the **Blueprint**, recommended for individual deployments.
+The normative content is in three categories: the **Protocol**, required of every implementation; the **Ledger Specifications**, required of anyone interoperating with that ledger; and the **Recommendations**, advised for individual deployments.
 
 | Topic | Where |
 |---|---|
@@ -98,9 +98,9 @@ The normative content is in three categories: the **Protocol**, required of ever
 | Encodings of message payloads, channel status and endpoint sync messages | [protocol/schema.md](protocol/schema.md) |
 | Known open design questions | [protocol/open-issues.md](protocol/open-issues.md) |
 | Ledgers, verifier APIs and proof schemes | [ledgers/](ledgers/README.md) |
-| CLPR Service design and administration | [blueprint/clpr-service.md](blueprint/clpr-service.md) |
-| Connector stakes and slashing | [blueprint/stakes-and-bonds.md](blueprint/stakes-and-bonds.md) |
-| Execution charges and queue quotas | [blueprint/channel-economics.md](blueprint/channel-economics.md) |
+| CLPR Service design and administration | [recommendations/clpr-service.md](recommendations/clpr-service.md) |
+| Connector stakes and slashing | [recommendations/stakes-and-bonds.md](recommendations/stakes-and-bonds.md) |
+| Execution charges and queue quotas | [recommendations/channel-economics.md](recommendations/channel-economics.md) |
 | Versions and how the specification changes | [README.md](README.md#changing-the-specification) |
 
 ## 7. Vocabulary
@@ -131,8 +131,8 @@ Terms other than the [major parts](#2-major-parts):
 | Verifier API | A ledger's concrete binding of the verifier interface. | [Ledgers](ledgers/README.md) |
 | Proof scheme | What is proven about bundle content, how, and how it is verified. | [Ledgers](ledgers/README.md) |
 | Bundle aggregation | How an endpoint gathers bundle content from its ledger's state. | [Ledgers](ledgers/README.md) |
-| Execution charge, margin | What a connector pays for executing a message, and the share paid on top to the bundle submitter. | [Channel economics §1](blueprint/channel-economics.md#1-execution-charges) |
-| Stake, slashing | A connector's locked funds, and their forfeiture for failed messages. | [Stakes and bonds](blueprint/stakes-and-bonds.md) |
+| Execution charge, margin | What a connector pays for executing a message, and the share paid on top to the bundle submitter. | [Channel economics §1](recommendations/channel-economics.md#1-execution-charges) |
+| Stake, slashing | A connector's locked funds, and their forfeiture for failed messages. | [Stakes and bonds](recommendations/stakes-and-bonds.md) |
 
 ## 8. Application patterns
 

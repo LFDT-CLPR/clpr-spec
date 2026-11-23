@@ -11,9 +11,11 @@ Rules:
   link        a relative link points to a missing file or heading anchor
   header      a Protocol module or Ledger Specification lacks its header,
               or a Protocol module lacks its History section
-  readme      a README.md in protocol/, ledgers/ or blueprint/ carries a header
-              or an RFC 2119 keyword (a README orients; it states no rules)
-  blueprint   MUST appears in the Blueprint
+  readme      a README.md in protocol/, ledgers/ or recommendations/ carries a
+              header or an RFC 2119 keyword (a README orients; it states no
+              rules)
+  recommendations
+              MUST appears in the Recommendations
   keyword     an RFC 2119 keyword appears in a non-normative document
   history     version, EAP, implementation-status or "not yet specified" wording
               appears in normative prose
@@ -25,7 +27,7 @@ import re
 import sys
 
 SKIP_DIRS = {".git", ".idea", "node_modules", os.path.join("archive", "main")}
-NORMATIVE_DIRS = ("protocol", "ledgers", "blueprint")
+NORMATIVE_DIRS = ("protocol", "ledgers", "recommendations")
 NON_NORMATIVE = ("clpr-overview.md", os.path.join("protocol", "open-issues.md"))
 KEYWORDS = re.compile(r"\b(MUST NOT|MUST|SHALL NOT|SHALL|SHOULD NOT|SHOULD|REQUIRED|RECOMMENDED|NOT RECOMMENDED|MAY|OPTIONAL)\b")
 HISTORY = re.compile(r"\bv0\.\d|\bEAP\b|\bin this (version|revision)\b|\bnot yet (specified|defined|implemented|supported|produced|normative)\b|\bimplementations? (use|at)\b", re.IGNORECASE)
@@ -141,8 +143,8 @@ def check_wording(root, rel):
         text = strip_code_spans(line)
         if rel in NON_NORMATIVE and KEYWORDS.search(text):
             report(rel, number, "keyword", f"RFC 2119 keyword in a non-normative document: {KEYWORDS.search(text).group(0)}")
-        if top == "blueprint" and re.search(r"\bMUST\b", text):
-            report(rel, number, "blueprint", "MUST in the Blueprint (use SHOULD or MAY)")
+        if top == "recommendations" and re.search(r"\bMUST\b", text):
+            report(rel, number, "recommendations", "MUST in the Recommendations (use SHOULD or MAY)")
         if (normative or rel in NON_NORMATIVE) and not in_history and not line.startswith("> **Category:**"):
             m = HISTORY.search(text)
             if m:

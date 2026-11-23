@@ -18,7 +18,7 @@ Ask for any that are missing:
 
 ## Steps
 
-1. **Check the vehicle.** Only Protocol behavior needs a CLIP ([CLIP-0001 §5.2](../../../clips/clip-0001.md#52-what-each-change-needs)). If the change is errata, editorial, Blueprint or Ledger Specification only, say so and stop.
+1. **Check the vehicle.** Only Protocol behavior needs a CLIP ([CLIP-0001 §5.2](../../../clips/clip-0001.md#52-what-each-change-needs)). If the change is errata, editorial, or only to the Recommendations or a Ledger Specification, say so and stop.
 2. **Read the base text.** Read every module the change could touch, the related open issues in [protocol/open-issues.md](../../../protocol/open-issues.md), and existing CLIPs in `clips/` that it may depend on, supersede or conflict with.
 3. **Copy the template.** Copy [clips/clip-template.md](../../../clips/clip-template.md) to a working file outside `clips/`, for example `clip-draft-<short-title>.md` at the repository root. Do not add the file to `clips/` or choose a number; an Editor does both ([CLIP-0001 §6.4](../../../clips/clip-0001.md#64-lifecycle)).
 4. **Fill the front matter** as [CLIP-0001 §6.3](../../../clips/clip-0001.md#63-front-matter) defines:

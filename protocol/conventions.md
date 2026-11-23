@@ -2,7 +2,7 @@
 
 > **Category:** Protocol · **Version:** v0.2 · **Last changed:** v0.2
 
-This module defines the notation used throughout the specification. It applies to the Protocol, the Ledger Specifications and the Blueprint.
+This module defines the notation used throughout the specification. It applies to the Protocol, the Ledger Specifications and the Recommendations.
 
 ## 1. Requirement keywords
 
@@ -11,7 +11,7 @@ This module defines the notation used throughout the specification. It applies t
 | Document | Keywords used |
 |---|---|
 | Protocol and Ledger Specifications | MUST, SHOULD, MAY |
-| Blueprint | SHOULD, MAY |
+| Recommendations | SHOULD, MAY |
 | Overview, open issues, notes marked non-normative | None |
 
 ## 2. Notation

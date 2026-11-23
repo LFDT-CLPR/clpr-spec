@@ -2,7 +2,7 @@
 
 > **Category:** Protocol · **Version:** v0.2 · **Last changed:** v0.2
 
-A **connector** authorizes the messages applications send on a channel and pays for their execution on the destination ledger. A connector is registered separately on each ledger of a channel. This module defines how a connector is identified and registered, what is required for it to carry messages, how it authorizes outbound messages, and how it is removed. Stakes and slashing are defined in the [Blueprint](../blueprint/stakes-and-bonds.md).
+A **connector** authorizes the messages applications send on a channel and pays for their execution on the destination ledger. A connector is registered separately on each ledger of a channel. This module defines how a connector is identified and registered, what is required for it to carry messages, how it authorizes outbound messages, and how it is removed. Stakes and slashing are defined in the [Recommendations](../recommendations/stakes-and-bonds.md).
 
 ## 1. Connector identity
 
@@ -29,7 +29,7 @@ Each connector record on a ledger holds at least:
 | `connector_contract` | The address of the connector's contract on this ledger, which implements the ledger's connector interface ([ledgers](../ledgers/README.md)). |
 | `admin` | The authority that can remove the connector (Section 5). |
 
-Other connector state, including its stake, is defined in the [Blueprint](../blueprint/stakes-and-bonds.md#1-connector-stake).
+Other connector state, including its stake, is defined in the [Recommendations](../recommendations/stakes-and-bonds.md#1-connector-stake).
 
 ## 2. Registration
 
@@ -67,15 +67,15 @@ The CLPR Service MUST reject the call if any of these holds:
 | A connector with `connector_id` is already registered on the channel. |
 | `signature` does not prove control of `public_key`. |
 | `connector_contract` is not a contract deployed on this ledger. |
-| The stake requirement of the deployment is not met ([Blueprint](../blueprint/stakes-and-bonds.md#1-connector-stake)). |
+| The stake requirement of the deployment is not met ([Recommendations](../recommendations/stakes-and-bonds.md#1-connector-stake)). |
 
 Otherwise it creates the connector record. The CLPR Service keeps the commitment, recorded as completed.
 
 ## 3. Connectors on both ledgers
 
-A connector carries messages only if it is registered on both ledgers, on the same channel and with the same connector id. On the source ledger, it authorizes outbound messages (Section 4). On the destination ledger, it pays for executing the messages it receives ([Blueprint](../blueprint/channel-economics.md#1-execution-charges)).
+A connector carries messages only if it is registered on both ledgers, on the same channel and with the same connector id. On the source ledger, it authorizes outbound messages (Section 4). On the destination ledger, it pays for executing the messages it receives ([Recommendations](../recommendations/channel-economics.md#1-execution-charges)).
 
-A DATA message carries the source connector's id ([message types](messaging.md#1-message-types)). The destination CLPR Service resolves the connector directly by (`channel_id`, `connector_id`); it makes no authorization call. If no such connector is registered on the destination, the CLPR Service MUST NOT deliver the message to the application and MUST answer it with a REPLY of status CONNECTOR_NOT_FOUND ([replies](messaging.md#7-replies)). The consequences for the source connector are defined in the [Blueprint](../blueprint/stakes-and-bonds.md#2-slashing-and-bans).
+A DATA message carries the source connector's id ([message types](messaging.md#1-message-types)). The destination CLPR Service resolves the connector directly by (`channel_id`, `connector_id`); it makes no authorization call. If no such connector is registered on the destination, the CLPR Service MUST NOT deliver the message to the application and MUST answer it with a REPLY of status CONNECTOR_NOT_FOUND ([replies](messaging.md#7-replies)). The consequences for the source connector are defined in the [Recommendations](../recommendations/stakes-and-bonds.md#2-slashing-and-bans).
 
 ## 4. Authorization of outbound messages
 
@@ -93,7 +93,7 @@ It returns one boolean, `authorized`.
 - The CLPR Service MUST reject the send unless the call returns true. A failed call is treated as a rejection.
 - The connector MAY apply any authorization logic, for example allow-lists or payment requirements. Whether it can change its own state during the call is defined by the ledger's connector interface.
 - The call MUST NOT modify CLPR Service state.
-- By returning true, the connector commits that its counterpart on the destination ledger can pay for executing the message, and that it can itself cover the cost of handling the reply. This commitment is the basis for slashing ([Blueprint](../blueprint/stakes-and-bonds.md#2-slashing-and-bans)).
+- By returning true, the connector commits that its counterpart on the destination ledger can pay for executing the message, and that it can itself cover the cost of handling the reply. This commitment is the basis for slashing ([Recommendations](../recommendations/stakes-and-bonds.md#2-slashing-and-bans)).
 
 The concrete function signature and call semantics are part of each ledger's connector interface, in its Ledger Specifications ([ledgers](../ledgers/README.md)). The other checks on a send, and their order, are defined in [enqueue](messaging.md#5-enqueue).
 
@@ -101,7 +101,7 @@ The concrete function signature and call semantics are part of each ledger's con
 
 A connector's admin MAY remove it from its channel on that ledger. The CLPR Service MUST refuse while the connector has **in-flight messages**: DATA messages sent through it on this ledger whose reply has not been received.
 
-Removal affects only the ledger on which it is done. After removal, sends that name the connector are rejected, and DATA messages that name it and arrive on this ledger are answered with CONNECTOR_NOT_FOUND (Section 3). The return of the connector's stake is defined in the [Blueprint](../blueprint/stakes-and-bonds.md#1-connector-stake).
+Removal affects only the ledger on which it is done. After removal, sends that name the connector are rejected, and DATA messages that name it and arrive on this ledger are answered with CONNECTOR_NOT_FOUND (Section 3). The return of the connector's stake is defined in the [Recommendations](../recommendations/stakes-and-bonds.md#1-connector-stake).
 
 ## History
 

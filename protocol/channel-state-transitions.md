@@ -25,7 +25,7 @@ Any caller can submit a bundle to the CLPR Service:
 submitBundle(channel_id: bytes32, bundle: bytes)
 ```
 
-The CLPR Service processes it with the algorithm below. Processing is atomic: when a step rejects the bundle, every effect of the earlier steps is discarded and the channel is unchanged. A rejected submission costs the submitter its transaction fee; whether a rejection is also treated as misbehavior is local ([Blueprint](../blueprint/clpr-service.md#5-bundle-submission)).
+The CLPR Service processes it with the algorithm below. Processing is atomic: when a step rejects the bundle, every effect of the earlier steps is discarded and the channel is unchanged. A rejected submission costs the submitter its transaction fee; whether a rejection is also treated as misbehavior is local ([Recommendations](../recommendations/clpr-service.md#5-bundle-submission)).
 
 In the pseudocode, `C` is the channel, `T` the ledger's **own** [throttles](ledger-configuration.md#3-throttles), and `md` the returned queue metadata.
 
@@ -158,7 +158,7 @@ A bundle **makes progress** if at least one of the following criteria holds. The
 | 5b | Drain | `C.status = CLOSING`, and every DATA message in the outbound queue is answered by a REPLY among the bundle's new messages |
 | 5c | Close | `C.status = DRAINED`; `md.status` is DRAINED or CLOSED; `max(C.acked_message_id, md.received_message_id) ≥ C.next_message_id − 1`; and `C.received_message_id ≥ md.next_message_id − 1` |
 
-A bundle for a CLOSED channel is rejected by Step 1, not for lack of progress. CLPR Endpoints SHOULD NOT submit bundles that make no progress ([Blueprint](../blueprint/clpr-service.md#5-bundle-submission)).
+A bundle for a CLOSED channel is rejected by Step 1, not for lack of progress. CLPR Endpoints SHOULD NOT submit bundles that make no progress ([Recommendations](../recommendations/clpr-service.md#5-bundle-submission)).
 
 ## 4. Status transitions
 
@@ -166,7 +166,7 @@ A bundle for a CLOSED channel is rejected by Step 1, not for lack of progress. C
 |---|---|---|---|
 | (none) | PENDING | `registerChannel` | [Registration](channel-setup.md#2-registration) |
 | PENDING | ACTIVE | `completeChannel` | [Registration](channel-setup.md#2-registration) |
-| PENDING | (none) | Administration | The claim is removed ([Blueprint](../blueprint/clpr-service.md#2-administration)). |
+| PENDING | (none) | Administration | The claim is removed ([Recommendations](../recommendations/clpr-service.md#2-administration)). |
 | ACTIVE | PAUSED | Bundle, Step 9 | A response ordering violation. |
 | PAUSED | ACTIVE | Bundle, Step 11 | A bundle accepted without a response ordering violation. |
 | ACTIVE | CLOSING | Bundle, Step 14 | `md.status` is CLOSING, DRAINED or CLOSED. |
@@ -195,7 +195,7 @@ Condition 3 is needed because a bundle can end before the peer's latest message 
 
 There is no close notification. A bundle whose `md.status` is CLOSED is processed like any other: it moves an ACTIVE or PAUSED side to CLOSING, and a DRAINED side to CLOSED when the conditions above hold. If no such bundle reaches a DRAINED side, the recovery path is administrative.
 
-**Administrative close.** The CLPR Service administration MAY close an ACTIVE or PAUSED channel. The channel moves to CLOSING, and on to DRAINED in the same step if its outbound queue holds no DATA message. The administration MAY also close a DRAINED channel: the **recovery close**. The recovery close MUST require `C.acked_message_id ≥ C.next_message_id − 1`, so that no message of this side is abandoned. Who may close a channel is a deployment choice ([Blueprint](../blueprint/clpr-service.md#25-closing-a-channel)).
+**Administrative close.** The CLPR Service administration MAY close an ACTIVE or PAUSED channel. The channel moves to CLOSING, and on to DRAINED in the same step if its outbound queue holds no DATA message. The administration MAY also close a DRAINED channel: the **recovery close**. The recovery close MUST require `C.acked_message_id ≥ C.next_message_id − 1`, so that no message of this side is abandoned. Who may close a channel is a deployment choice ([Recommendations](../recommendations/clpr-service.md#25-closing-a-channel)).
 
 ## 6. Pause and resume
 

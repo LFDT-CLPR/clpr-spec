@@ -15,7 +15,7 @@ A **sync cycle** is one exchange between two endpoints, for one channel, in whic
 
 Apart from who opens the stream, the two sides do the same things. Each side reports its own channel state in a `BundleRequest`, and answers the other side's request with a bundle built from its own ledger's state. In what follows, the **requestor** is the side whose `BundleRequest` is being answered, and the **sender** is the side that builds and sends the bundle. Each side is the requestor for one bundle and the sender for the other.
 
-A side that receives a bundle submits it to the CLPR Service on its own ledger ([bundle submission](../blueprint/clpr-service.md#5-bundle-submission)). The bundle takes effect only if the channel's verifier contract and [bundle processing](channel-state-transitions.md#2-bundle-processing) accept it.
+A side that receives a bundle submits it to the CLPR Service on its own ledger ([bundle submission](../recommendations/clpr-service.md#5-bundle-submission)). The bundle takes effect only if the channel's verifier contract and [bundle processing](channel-state-transitions.md#2-bundle-processing) accept it.
 
 ## 2. Transport
 
@@ -138,7 +138,7 @@ There is no close notification: an endpoint does not initiate a cycle to report 
 
 ## 6. Misbehavior
 
-Misbehavior detection and enforcement are strictly local and are not part of the protocol. Each endpoint detects and responds to misbehavior that it observes; recommended practice is in the [Blueprint](../blueprint/clpr-service.md#68-transport-and-sync-hygiene).
+Misbehavior detection and enforcement are strictly local and are not part of the protocol. Each endpoint detects and responds to misbehavior that it observes; recommended practice is in [CLPR Service §6.8](../recommendations/clpr-service.md#68-transport-and-sync-hygiene).
 
 ## 7. Schema
 

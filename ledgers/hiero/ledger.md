@@ -118,7 +118,7 @@ The CLPR Service calls the application callbacks as ordinary contract calls duri
 | `onClprMessage(bytes32,bytes,bytes)` | The contract at `target_application`, for each DATA message delivered | `min(max_gas_per_message, floor(g / c))`, where `g` is the transaction's remaining gas and `c` the number of `onClprMessage` and `onClprResponse` calls still to be made in the bundle. A budget of 0 gives APPLICATION_ERROR, with no call and no charge. | A call that succeeds gives SUCCESS. `message_reply_data` is the return data decoded as an ABI-encoded `bytes`, or empty if there is no return data. Return data that does not decode as `bytes` gives APPLICATION_ERROR, with empty reply data. A failed call gives APPLICATION_ERROR, with empty reply data. Response data that would make the REPLY exceed the peer's `max_message_payload_bytes` gives APPLICATION_ERROR, with empty reply data ([throttles](../../protocol/ledger-configuration.md#3-throttles)). |
 | `onClprResponse(bytes32,uint64,uint8,bytes)` | The original `sender`, for each REPLY received, if `sender` is not empty | `min(max_gas_per_message, floor(g / c))`, as for `onClprMessage` | Called only if the source connector can prepay its gas; otherwise it is skipped. Best effort: a failed or skipped call is ignored, and the REPLY remains delivered. |
 
-The connector is charged as defined in [execution charges](../../blueprint/channel-economics.md#1-execution-charges). Hiero does not call `payForExecution` or `onInboundMessage`.
+The connector is charged as defined in [execution charges](../../recommendations/channel-economics.md#1-execution-charges). Hiero does not call `payForExecution` or `onInboundMessage`.
 
 ## 7. Endpoint manifest
 

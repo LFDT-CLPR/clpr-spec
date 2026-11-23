@@ -169,7 +169,7 @@ A trust anchor id is non-empty if and only if its trust anchor is non-empty ([Ve
 
 ## 4. Call semantics
 
-- Both functions are `view`. A verifier contract MUST NOT modify state, and the CLPR Service MUST call it with `STATICCALL`. The gas the Service provides to a verifier call is a Service parameter ([Blueprint §4.2](../../blueprint/clpr-service.md#42-service-parameters)); an EVM CLPR Service MAY forward all available gas.
+- Both functions are `view`. A verifier contract MUST NOT modify state, and the CLPR Service MUST call it with `STATICCALL`. The gas the Service provides to a verifier call is a Service parameter ([CLPR Service §4.2](../../recommendations/clpr-service.md#42-service-parameters)); an EVM CLPR Service MAY forward all available gas.
 - A revert is a [rejection](../../protocol/verifier-interface.md#5-rejection). Return data that does not ABI-decode to the declared results is also a rejection.
 - At channel completion the CLPR Service calls `verifyConfig` once and stores, with the channel, the verifier address, `initialTrustAnchor`, `initialTrustAnchorId` and `channelContext`. The verifier address does not change for the channel's life ([Channel setup §4](../../protocol/channel-setup.md#4-verifier-binding)).
 - For every submitted bundle the CLPR Service calls `verifyBundle` with the stored trust anchor and channel context. It applies the result, including `newTrustAnchor` and `newTrustAnchorId`, as specified in [bundle processing](../../protocol/channel-state-transitions.md#2-bundle-processing) (Step 5 for the trust anchor).
