@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+
+package clpr.v0_2;
+
+import "protocol/schema/clpr_message.proto";
+
+// Key of a queued message in Hiero state.
+message ClprMessageKey {
+  // 32-byte channel id.
+  bytes channel_id = 1;
+
+  // Message id within the channel. See protocol/messaging.md §2.
+  uint64 message_id = 2;
+}
+
+// Stored value of a queued message in Hiero state.
+message ClprMessageValue {
+  ClprMessagePayload payload = 1;
+
+  // Running hash after this message. See protocol/messaging.md §4.
+  bytes running_hash_after_processing = 2;
+}

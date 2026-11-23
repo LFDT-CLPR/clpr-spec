@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+
+package clpr.v0_2;
+
+// A proof of Hiero state items under a signed block root.
+// Meaning: ledgers/hiero/proof-schemes/hints-wraps.md §4.
+message StateProof {
+  repeated MerklePath paths = 1;
+  oneof proof {
+    TssSignedBlockProof signed_block_proof = 2;
+  }
+}
+
+// A Merkle path from one leaf towards the block root.
+message MerklePath {
+  // From the leaf towards the root.
+  repeated SiblingNode siblings = 1;
+  uint32 next_path_index = 2;
+  oneof content {
+    bytes hash = 3;
+    bytes state_item_leaf = 4;
+    bytes block_item_leaf = 5;
+    bytes timestamp_leaf = 6;
+  }
+}
+
+message SiblingNode {
+  bool is_left = 1;
+  bytes hash = 2;
+}
+
+// The ledger's signature on the block root.
+message TssSignedBlockProof {
+  bytes block_signature = 1;
+}

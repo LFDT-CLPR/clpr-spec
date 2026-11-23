@@ -1,0 +1,60 @@
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+
+package clpr.v0_2;
+
+import "protocol/schema/clpr_ledger_configuration.proto";
+
+// A Besu block header. Encoding: ledgers/besu/ledger.md §4.2.
+message BlockHeader {
+  // The RLP list of the header's fields.
+  bytes rlp = 1;
+}
+
+// A proof of one storage slot. Encoding: ledgers/besu/ledger.md §3.4.
+message StorageProofEntry {
+  // Slot number, big-endian.
+  bytes key = 1;
+
+  // Slot value. Verifiers read the value from the proof.
+  bytes value = 2;
+
+  // Trie nodes from the storage root to the slot's leaf.
+  repeated bytes proof = 3;
+}
+
+// The protobuf form of a QBFT configuration proof. Meaning:
+// ledgers/besu/proof-schemes/qbft-header.md §9.1 and qbft-contract.md §9.1.
+message ClprQbftLedgerConfigurationPayload {
+  // Ignored by verifiers.
+  BlockHeader genesis_block_header = 1;
+
+  // The ledger configuration.
+  ClprLedgerConfiguration ledger_configuration = 2;
+
+  // The header whose state the proofs refer to.
+  BlockHeader current_block_header = 3;
+
+  // Account proof of the CLPR Service under the header's state root.
+  repeated bytes clpr_service_account_proof = 4;
+
+  // Storage proofs of CLPR Service slots, such as slot 25.
+  repeated StorageProofEntry clpr_service_storage_proofs = 5;
+
+  // Present only for the qbft-contract scheme.
+  QbftContractModeValidatorSource contract_mode_validator_source = 6;
+}
+
+// Where and how the validator set of the qbft-contract scheme is proven.
+message QbftContractModeValidatorSource {
+  bytes validator_contract_address = 1;
+
+  // 32-byte slot of the validator array.
+  bytes array_slot = 2;
+
+  // Account proof of the validator contract.
+  repeated bytes validator_contract_account_proof = 3;
+
+  // Storage proofs of the array length slot and of every element slot.
+  repeated StorageProofEntry validator_contract_storage_proofs = 4;
+}
