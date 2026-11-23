@@ -8,13 +8,13 @@ A **channel** connects a CLPR Service on one ledger with a CLPR Service on anoth
 
 A **channel id** is a 32-byte value, chosen by the registrant (for example at random). The same channel id is used on both ledgers; it is what ties the two records of a channel together. Within one CLPR Service, a channel id identifies at most one channel.
 
-- A ledger MAY constrain how a channel id is derived. Because the id is identical on both ledgers, the registrant MUST choose an id that satisfies the constraints of both. EVM ledgers derive the channel id; see [EVM](../ledgers/evm/README.md).
-- The Protocol does not derive the channel id from a key. The registrant MAY use a different key pair on each ledger, of a type that ledger supports, unless the two ledgers' constraints on the id require the same key (for example, a channel between two EVM ledgers).
+- A ledger MAY constrain how a channel id is derived. Because the id is identical on both ledgers, the registrant MUST choose an id that satisfies the constraints of both. Each ledger's Ledger Specifications state its constraints ([ledgers](../ledgers/README.md)).
+- The Protocol does not derive the channel id from a key. The registrant MAY use a different key pair on each ledger, of a type that ledger supports, unless the two ledgers' constraints on the id require the same key.
 - Several channels MAY connect the same pair of CLPR Services. Each has its own channel id, verifier contract and message queues, and is independent of the others.
 
 ## 2. Registration
 
-A channel is registered on each ledger in two phases, commit and reveal. The commit phase reserves the channel on both ledgers without revealing the channel id or the key; the reveal phase creates the channel. Registration is open to any caller. The registrant has no authority over the channel once it exists: its key serves only to coordinate registration across the two ledgers, and on EVM ledgers to derive the channel id.
+A channel is registered on each ledger in two phases, commit and reveal. The commit phase reserves the channel on both ledgers without revealing the channel id or the key; the reveal phase creates the channel. Registration is open to any caller. The registrant has no authority over the channel once it exists: its key serves only to coordinate registration across the two ledgers, and, on a ledger that derives the channel id from the key (Section 1), to derive the id.
 
 The **ownership commitment** binds a channel id to the registrant's key on one ledger:
 
@@ -37,7 +37,9 @@ The registrant:
 |---|---|---|
 | `ownership_commitment` | `bytes32` | The ownership commitment for this ledger. |
 
-The CLPR Service records the commitment as pending. Registering a commitment that is already pending has no further effect. A pending commitment for which no channel exists yet is the channel's PENDING status ([channel status](channel-state-transitions.md#1-channel-status)).
+`registerChannel` takes the ownership commitment as its only input. The channel id and the key are first presented at `completeChannel`.
+
+The CLPR Service records the commitment as pending. Registering a commitment that is already pending or completed has no further effect, and a ledger MAY reject it. A pending commitment for which no channel exists yet is the channel's PENDING status ([channel status](channel-state-transitions.md#1-channel-status)).
 
 ### 2.2 `completeChannel`
 
@@ -50,7 +52,7 @@ The CLPR Service records the commitment as pending. Registering a commitment tha
 | `config_proof` | `bytes` | A proof of the peer's `LedgerConfiguration`. |
 | `endpoint_manifest_proof` | `optional bytes` | A proof of the peer's local endpoint manifest ([manifest proofs](endpoint-manifest.md#5-manifest-proofs)); empty when absent. |
 
-The message signed, the signature scheme and the key encoding are ledger-specific, and a ledger MAY require additional inputs for its own rules. These are defined in each ledger's README under *Registration signatures* (for example [Hiero](../ledgers/hiero/README.md#5-registration-signatures) and [EVM](../ledgers/evm/README.md#5-registration-signatures)).
+The message signed, the signature scheme and the key encoding are ledger-specific, and a ledger MAY require additional inputs for its own rules. These are defined in each ledger's Ledger Specifications, under *Registration signatures* ([ledgers](../ledgers/README.md)).
 
 The CLPR Service MUST reject the call if any of these holds:
 
@@ -64,7 +66,7 @@ The CLPR Service MUST reject the call if any of these holds:
 | `verifyConfig(config_proof, channel_id, endpoint_manifest_proof)` fails ([verifier interface](verifier-interface.md#2-verifyconfig)). |
 | The returned configuration has no throttles, or its timestamp is not valid ([`schema/`](schema/clpr_ledger_configuration.proto)). |
 
-Otherwise it creates the channel with status ACTIVE, the channel context (Section 3), the verifier binding (Section 4), the initial peer state (Section 5) and the initial shared state (Section 6). How the Service stores or removes the commitment afterwards is a deployment choice ([Blueprint](../blueprint/clpr-service.md#1-structure-and-internal-state)).
+Otherwise it creates the channel with status ACTIVE, the channel context (Section 3), the verifier binding (Section 4), the initial peer state (Section 5) and the initial shared state (Section 6). The CLPR Service keeps the commitment, recorded as completed.
 
 ## 3. Channel context
 
@@ -75,11 +77,11 @@ Otherwise it creates the channel with status ACTIVE, the channel context (Sectio
 | `channel_id` | `bytes32` | The channel id. |
 | `service_address` | `bytes` | The address of the peer CLPR Service, from the `service_address` of the peer configuration returned by `verifyConfig`. |
 
-The CLPR Service builds the channel context at `completeChannel` and stores it with the channel. It never changes. The Service passes it unchanged to every `verifyBundle` call for the channel ([verifier interface](verifier-interface.md#3-verifybundle)). Its encoding in a ledger's verifier API is defined there (for example [EVM](../ledgers/evm/verifier-api.md#32-channelcontext)).
+The CLPR Service builds the channel context at `completeChannel` and stores it with the channel. It never changes. The Service passes it unchanged to every `verifyBundle` call for the channel ([verifier interface](verifier-interface.md#3-verifybundle)). Its encoding in a ledger's verifier API is defined there ([ledgers](../ledgers/README.md)).
 
 ## 4. Verifier binding
 
-The verifier contract is named in `completeChannel`. It is either a contract deployed on the local ledger that implements the ledger's verifier API ([ledgers](../ledgers/README.md)), or a verifier provided by the ledger itself (for example [Hiero](../ledgers/hiero/README.md#3-built-in-verifiers)). The CLPR Service MUST reject an address at which there is neither a deployed contract nor a ledger-provided verifier.
+The verifier contract is named in `completeChannel`. It is either a contract deployed on the local ledger that implements the ledger's verifier API ([ledgers](../ledgers/README.md)), or a verifier provided by the ledger itself, as its Ledger Specifications define. The CLPR Service MUST reject an address at which there is neither a deployed contract nor a ledger-provided verifier.
 
 The verifier binding is fixed for the life of the channel; no operation changes it. If the peer ledger's proof scheme changes so that the verifier can no longer verify its bundles, a new channel with a new verifier is needed. Applications can therefore evaluate a channel's verifier once.
 
@@ -102,7 +104,7 @@ The trust anchor and its id are stored with the channel and change only as defin
 
 ## 6. Shared channel state
 
-The fields below are the channel state that the peer proves or consumes. Which of them the peer's verifier proves, and how each reaches the peer, is defined in [queue metadata](bundle.md#2-queue-metadata) and [proof requirements](bundle.md#4-proof-requirements). The structure is logical; how each ledger stores and proves it is ledger-specific (for example [Besu](../ledgers/besu/README.md#3-proven-storage-layout)). All other channel state is internal to the CLPR Service ([Blueprint](../blueprint/clpr-service.md#1-structure-and-internal-state)).
+The fields below are the channel state that the peer proves or consumes. Which of them the peer's verifier proves, and how each reaches the peer, is defined in [queue metadata](bundle.md#2-queue-metadata) and [proof requirements](bundle.md#4-proof-requirements). The structure is logical; how each ledger stores and proves it is ledger-specific ([ledgers](../ledgers/README.md)). All other channel state is internal to the CLPR Service ([Blueprint](../blueprint/clpr-service.md#1-structure-and-internal-state)).
 
 | Field | Type | Meaning | Initial value |
 |---|---|---|---|

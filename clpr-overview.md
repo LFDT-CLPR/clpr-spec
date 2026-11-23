@@ -36,7 +36,7 @@ A message from an application on ledger A to an application on ledger B:
 4. An endpoint of B submits the bundle to B in an ordinary transaction.
 5. B's CLPR Service passes the bundle and the channel's stored trust anchor to the channel's verifier contract, which checks the proof and returns the messages and the sender's queue metadata. The Service checks the message ids and the running hash itself.
 6. For each DATA message, the Service checks that the connector exists on B and can pay. It calls the target application with a gas limit, charges the connector for the execution plus a margin, paid to the bundle submitter, and appends a REPLY to its own outbound queue.
-7. A later sync carries the REPLY to A, and A's Service delivers it to the sending application. Some ledgers also charge the connector on A for that delivery ([Channel economics §1](blueprint/channel-economics.md#1-execution-charges)). The queue metadata in each bundle also acknowledges the messages its sender has received.
+7. A later sync carries the REPLY to A, and A's Service delivers it to the sending application. Some ledgers also charge the connector on A for that delivery ([Channel economics §1](blueprint/channel-economics.md#1-execution-charges)). The queue metadata in a bundle also acknowledges the messages its sender has received.
 
 Every DATA message receives exactly one REPLY, in the order of the original messages. If the connector on B is missing or cannot pay, B replies with a failure instead of calling the application, and the connector's stake is slashed. Repeated failures lead to a ban from the channel ([Stakes and bonds §2](blueprint/stakes-and-bonds.md#2-slashing-and-bans)).
 
@@ -58,7 +58,7 @@ An application that sends a message through CLPR trusts:
 
 **CLPR Endpoints** cannot forge messages either, because every bundle is proven. Availability needs at least one honest endpoint on each side; without one, messages stall.
 
-**No confidentiality.** CLPR provides integrity and authenticity. Payloads are stored in plaintext on both ledgers.
+**No confidentiality.** CLPR provides integrity and authenticity. Endpoint sync can run over TLS, which protects data in transit; it authenticates the endpoint only when the client verifies its certificate. Payloads are stored in plaintext on both ledgers.
 
 Recommendations for applications and deployments are in [CLPR Service §6](blueprint/clpr-service.md#6-security-considerations).
 
@@ -73,7 +73,7 @@ Recommendations for applications and deployments are in [CLPR Service §6](bluep
 | **Endpoint operator** | Runs CLPR Endpoints, which sync with peers and submit bundles | Serves all channels of its ledger | Pays transaction fees; earns the margin on executed messages |
 | **CLPR Service administrator** | Configures the CLPR Service, admits endpoints where admission is curated, closes channels | Acts when a channel is compromised | None |
 
-On Hiero, every consensus node is a CLPR Endpoint. On EVM ledgers, endpoints register and are admitted by the administrator. Endpoints are neither bonded nor slashed. The administrator cannot open channels or register connectors. Charges and penalties go to the bundle submitter ([Channel economics §2](blueprint/channel-economics.md#2-payment-to-the-bundle-submitter)).
+On Hiero, every consensus node is a CLPR Endpoint. On EVM ledgers, endpoints register and are admitted by the administrator. Endpoints are not slashed. The administrator cannot open channels or register connectors. Charges and penalties go to the bundle submitter ([Channel economics §2](blueprint/channel-economics.md#2-payment-to-the-bundle-submitter)).
 
 Each role vets those it depends on, in proportion to the value it puts at risk. To open a route, a verifier developer publishes a verifier; a connector operator vets it, opens the channel and registers a connector on both ledgers; an application developer vets the channel and connector. To withdraw, a connector operator stops authorizing messages, waits until its messages in flight are answered, and removes the connector on both ledgers ([Connector setup §5](protocol/connector-setup.md#5-removal)).
 
@@ -81,7 +81,7 @@ Adding a ledger needs no change to the Protocol or to other ledgers: its contrib
 
 ## 6. How the specification is organized
 
-The normative content is in three categories, defined in [CLIP-0001 §3](clips/clip-0001.md#3-the-specification): the **Protocol**, required of every implementation; the **Ledger Specifications**, required of anyone interoperating with that ledger; and the **Blueprint**, recommended for individual deployments.
+The normative content is in three categories: the **Protocol**, required of every implementation; the **Ledger Specifications**, required of anyone interoperating with that ledger; and the **Blueprint**, recommended for individual deployments.
 
 | Topic | Where |
 |---|---|
@@ -95,13 +95,13 @@ The normative content is in three categories, defined in [CLIP-0001 §3](clips/c
 | Verifier contracts and trust anchors | [protocol/verifier-interface.md](protocol/verifier-interface.md) |
 | Channel status and bundle processing | [protocol/channel-state-transitions.md](protocol/channel-state-transitions.md) |
 | Communication between endpoints | [protocol/endpoint-sync/](protocol/endpoint-sync/README.md) |
-| Encodings of shared data | [protocol/schema/](protocol/schema/README.md) |
+| Encodings of message payloads and channel status | [protocol/schema/](protocol/schema/README.md) |
 | Known open design questions | [protocol/open-issues.md](protocol/open-issues.md) |
 | Ledgers, verifier APIs and proof schemes | [ledgers/](ledgers/README.md) |
 | CLPR Service design and administration | [blueprint/clpr-service.md](blueprint/clpr-service.md) |
 | Connector stakes and slashing | [blueprint/stakes-and-bonds.md](blueprint/stakes-and-bonds.md) |
 | Execution charges and queue quotas | [blueprint/channel-economics.md](blueprint/channel-economics.md) |
-| Versions and how the specification changes | [clips/clip-0001.md](clips/clip-0001.md) |
+| Versions and how the specification changes | [README.md](README.md#changing-the-specification) |
 
 ## 7. Vocabulary
 
@@ -119,12 +119,12 @@ Terms other than the [major parts](#2-major-parts):
 | Channel id | The 32-byte id of a channel, the same on both ledgers. | [Channel setup §1](protocol/channel-setup.md#1-channel-identity) |
 | Channel context | The constant channel data passed to every verifier call. | [Channel setup §3](protocol/channel-setup.md#3-channel-context) |
 | Channel status | PENDING, ACTIVE, PAUSED, CLOSING, DRAINED or CLOSED. | [Channel state transitions §1](protocol/channel-state-transitions.md#1-channel-status) |
-| Message type | DATA, REPLY, CONTROL or REDACTED. | [Messaging §1](protocol/messaging.md#1-message-types) |
+| Message type | DATA, REPLY or CONTROL. | [Messaging §1](protocol/messaging.md#1-message-types) |
 | Message id | The position of a message in its channel's outbound queue. | [Messaging §2](protocol/messaging.md#2-message-identifiers-and-queue) |
 | Running hash | A hash chain over a queue's messages, which the receiver recomputes. | [Messaging §4](protocol/messaging.md#4-running-hash) |
 | Reply | The REPLY message that reports the outcome of a DATA message. | [Messaging §7](protocol/messaging.md#7-replies) |
 | Acknowledgement | A ledger's proven statement that it received messages; transport-level, unlike a reply. | [Messaging §9](protocol/messaging.md#9-acknowledgement) |
-| Queue metadata | The sender's proven queue position, carried in every bundle. | [Bundle §2](protocol/bundle.md#2-queue-metadata) |
+| Queue metadata | The sender's proven queue position, carried in every bundle that carries messages. | [Bundle §2](protocol/bundle.md#2-queue-metadata) |
 | Partial bundle | A bundle that ends before the sender's last queued message. | [Bundle §3](protocol/bundle.md#3-partial-bundles) |
 | Trust anchor | The data, stored with the channel, against which the verifier checks proofs. | [Verifier interface §1](protocol/verifier-interface.md#1-verifier-contracts-and-trust-anchors) |
 | Endpoint sync | The protocol CLPR Endpoints use to exchange bundles. | [Endpoint sync §1](protocol/endpoint-sync/README.md#1-purpose-and-roles) |

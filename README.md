@@ -35,7 +35,7 @@ Start with the [overview](clpr-overview.md). It describes the parts of CLPR and 
 | [Verifier interface](protocol/verifier-interface.md) | Abstract, stateless verifier interface and trust anchors |
 | [Channel state transitions](protocol/channel-state-transitions.md) | Bundle processing and channel status |
 | [Endpoint sync](protocol/endpoint-sync/README.md) | The wire protocol between CLPR Endpoints |
-| [Schema](protocol/schema/README.md) | Encodings of payloads and data structures |
+| [Schema](protocol/schema/README.md) | Encodings of message payloads and channel status |
 
 [Open issues](protocol/open-issues.md) lists known problems in the Protocol that a future version may address. It is non-normative.
 
@@ -51,4 +51,3 @@ Changes to Protocol behavior are made through CLPR Improvement Proposals ([CLIPs
 
 [`archive/`](archive/) holds earlier material, kept for reference only:
 - `archive/main/`: the specification and design records before CLIP-0001.
-- `archive/refactor-records/`: the [coverage matrix](archive/refactor-records/coverage-matrix.md) and the [implementation discrepancies](archive/refactor-records/implementation-discrepancies.md) of that rewrite.

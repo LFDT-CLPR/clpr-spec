@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+
+package clpr.v0_2;
+
+import "protocol/schema/clpr_channel_status.proto";
+
+// The fields of a Hiero channel record that verifiers read. The record has
+// fields numbered 1 to 20; the others are not listed here, and verifiers
+// ignore them. Meaning: ledgers/hiero/proof-schemes/hints-wraps/README.md §4.2.
+message ClprChannel {
+  // 32-byte channel id.
+  bytes channel_id = 1;
+
+  ClprChannelStatus status = 7;
+
+  uint64 next_message_id = 8;
+  uint64 acked_message_id = 9;
+
+  // 32 bytes.
+  bytes sent_running_hash = 10;
+
+  uint64 received_message_id = 11;
+
+  // 32 bytes.
+  bytes received_running_hash = 12;
+
+  uint64 endpoint_manifest_version = 20;
+}

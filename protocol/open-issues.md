@@ -2,13 +2,13 @@
 
 > **Non-normative.** This document is not a Protocol module, so it carries no version header or History.
 
-This document lists known open design questions. The modules each issue affects state the rules that apply; nothing here changes them. Resolving an issue that changes Protocol behavior requires a CLIP ([CLIP-0001 §5.2](../clips/clip-0001.md#52-what-each-change-needs)).
+This document lists known open design questions. The modules each issue affects state the rules that apply; nothing here changes them.
 
 ## OI-1. What the configuration proof must authenticate
 
 **Problem.** When a channel is opened, `verifyConfig` returns the peer's chain id, CLPR Service address, configuration timestamp, throttles, initial trust anchor and trust anchor id, and endpoint manifest ([Verifier interface §2](verifier-interface.md#2-verifyconfig)). The channel stores them as its initial peer state ([Channel setup §5](channel-setup.md#5-initial-peer-state)). The Protocol does not state which of these values the configuration proof must authenticate against the peer ledger's committed state, and which a verifier can accept as supplied. The initial trust anchor raises a further question: a proof can only be checked against an anchor that is already trusted, so unless the verifier fixes the expected anchor itself, the initial anchor is accepted on first use and must be checked out of band.
 
-**Current behavior.** The Protocol leaves this to each proof scheme. Channel users rely on the registrant's choice of verifier and on their own checks of the channel ([Overview §4](../clpr-overview.md#4-trust-model)).
+**Current behavior.** The Protocol leaves this to each proof scheme. The [hinTS with WRAPS](../ledgers/hiero/proof-schemes/hints-wraps/README.md) scheme verifies the configuration against a ledger id that the verifier holds. The [hinTS](../ledgers/hiero/proof-schemes/hints/README.md), [QBFT header](../ledgers/besu/proof-schemes/qbft-header.md) and [QBFT contract](../ledgers/besu/proof-schemes/qbft-contract.md) schemes take the initial authority from the configuration proof itself, so the registrant chooses it. Channel users rely on the registrant's choice of verifier and on their own checks of the channel ([Overview §4](../clpr-overview.md#4-trust-model)).
 
 **Options.**
 1. The Protocol states, for each value `verifyConfig` returns, whether the configuration proof must authenticate it. Each proof scheme's configuration proof section states how its proof does so.
@@ -19,13 +19,9 @@ This document lists known open design questions. The modules each issue affects 
 
 ## OI-2. Configuration proof format for the QBFT epoch scheme
 
-**Problem.** Opening a channel whose verifier uses the [QBFT epoch](../ledgers/besu/proof-schemes/qbft-epoch.md) scheme requires a configuration proof of the Besu ledger. Two incompatible forms exist:
-- a protobuf structure holding the block header that carries the validator set, the ledger configuration, a current block header, and account and storage proofs for the CLPR Service;
-- an RLP list of ten items holding a validator, the service address, the chain id, the configuration timestamp, the throttles, a block header and the epoch length.
+**Problem.** Opening a channel whose verifier uses the [QBFT epoch](../ledgers/besu/proof-schemes/qbft-epoch.md) scheme requires a configuration proof of the Besu ledger. The scheme defines no configuration proof. The [QBFT header](../ledgers/besu/proof-schemes/qbft-header.md#9-configuration-and-manifest-proofs) and [QBFT contract](../ledgers/besu/proof-schemes/qbft-contract.md#9-configuration-and-manifest-proofs) schemes define their forms, including a protobuf form, which are candidates for the QBFT epoch scheme.
 
-A variant of the first form, with an added epoch length field, is returned by an optional endpoint query that the specification does not define. A strict decoder of the first form rejects it.
-
-**Current behavior.** The scheme defines no form. A verifier contract documents the form it accepts ([QBFT epoch §9](../ledgers/besu/proof-schemes/qbft-epoch.md#9-configuration-and-manifest-proofs)).
+**Current behavior.** The scheme defines no form ([QBFT epoch §9](../ledgers/besu/proof-schemes/qbft-epoch.md#9-configuration-and-manifest-proofs)).
 
 **Options.**
 1. Specify one form in the QBFT epoch scheme, and require producers and verifiers to conform.
@@ -41,7 +37,7 @@ A variant of the first form, with an added epoch length field, is returned by an
 
 **Options.**
 1. Keep out-of-band reconciliation, and define standard queries that list a channel's messages without replies.
-2. A forced close by the CLPR Service administrator that ends the channel without draining and resolves each message in flight locally, for example with the deprecated CHANNEL_CLOSED reply status ([Messaging §7](messaging.md#7-replies)).
+2. A forced close by the CLPR Service administrator that ends the channel without draining and resolves each message in flight locally, for example with a dedicated reply status ([Messaging §7](messaging.md#7-replies)).
 3. Move undelivered messages and pending replies to a new channel to the same peer.
 
 **Affected modules.** [Channel state transitions](channel-state-transitions.md), [Messaging §7](messaging.md#7-replies), [Connector setup §5](connector-setup.md#5-removal), [CLPR Service §2 and §7](../blueprint/clpr-service.md#2-administration).
@@ -97,12 +93,12 @@ A variant of the first form, with an added epoch length field, is returned by an
 
 ## OI-8. hinTS and WRAPS verification parameters
 
-**Problem.** The hinTS with WRAPS proof scheme describes the signature layout, the encodings of curve points and the checks a verifier performs ([hinTS with WRAPS §4.4](../ledgers/hiero/proof-schemes/hints-wraps.md#44-block-signature) and [§6](../ledgers/hiero/proof-schemes/hints-wraps.md#6-decode-and-verify-algorithm)). It does not give the WRAPS verification key, the Poseidon parameters or the full hinTS verification steps. Without them, a verifier for this scheme cannot be built from the specification alone.
+**Problem.** The hinTS with WRAPS proof scheme describes the signature layout, the encodings of curve points and the checks a verifier performs ([hinTS with WRAPS §4.4](../ledgers/hiero/proof-schemes/hints-wraps/README.md#44-block-signature) and [§6](../ledgers/hiero/proof-schemes/hints-wraps/README.md#6-decode-and-verify-algorithm)). It does not give the WRAPS verification key, the Poseidon parameters, the internal layout of the compressed WRAPS proof and how its public inputs bind the ledger id and the hinTS verification key, or the full hinTS verification steps. Without them, a verifier for this scheme cannot be built from the specification alone.
 
 **Current behavior.** The scheme does not state these parameters, so an independent verifier cannot be built from the specification alone.
 
 **Options.**
-1. Specify the parameters and the hinTS verification steps in a later revision of the scheme. This is a Ledger Specification change and needs no new specification version.
+1. Specify the parameters, the WRAPS proof layout and the hinTS verification steps in the scheme.
 2. Reference a published specification of hinTS and WRAPS that defines them.
 
-**Affected modules.** [hinTS with WRAPS](../ledgers/hiero/proof-schemes/hints-wraps.md).
+**Affected modules.** [hinTS with WRAPS](../ledgers/hiero/proof-schemes/hints-wraps/README.md) and, for the hinTS verification steps, [hinTS](../ledgers/hiero/proof-schemes/hints/README.md).

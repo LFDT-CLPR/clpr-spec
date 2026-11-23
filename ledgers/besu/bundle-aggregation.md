@@ -2,7 +2,7 @@
 
 > **Category:** Ledger Specification (Besu) · **Applies to:** v0.2 · **Revision:** 1
 
-This document defines how a Besu CLPR Endpoint gathers the [abstract bundle content](../../protocol/bundle.md#1-bundle-content) for one channel in answer to a peer's request. The proof scheme then proves and encodes it ([qbft-epoch](proof-schemes/qbft-epoch.md#5-encoding-algorithm)). Storage positions are those of the [proven storage layout](README.md#3-proven-storage-layout).
+This document defines how a Besu CLPR Endpoint gathers the [abstract bundle content](../../protocol/bundle.md#1-bundle-content) for one channel in answer to a peer's request. The channel's proof scheme then proves and encodes it, with the state proofs of [Besu §3.6](README.md#36-producing-the-state-proofs). Storage positions are those of the [proven storage layout](README.md#3-proven-storage-layout).
 
 ## 1. Inputs
 
@@ -19,7 +19,7 @@ The endpoint also uses the peer's throttles held in the local channel record ([L
 
 ## 2. State read and finality
 
-The endpoint reads the head block `H` at the `latest` block tag. QBFT blocks are final when sealed, so `H` is final. Every value of the bundle MUST be read at `H`: the channel record, the messages, the endpoint manifest and all proofs.
+The endpoint reads the head block `H` at the `latest` block tag. When the proof scheme bounds the validator changes that one bundle carries, `H` is the earlier block that the scheme sets ([qbft-epoch §5](proof-schemes/qbft-epoch.md#5-encoding-algorithm), [qbft-header §5](proof-schemes/qbft-header.md#5-encoding-algorithm), [qbft-contract §5](proof-schemes/qbft-contract.md#5-encoding-algorithm)), and the peer catches up over several bundles. QBFT blocks are final when sealed, so `H` is final. Every value of the bundle MUST be read at `H`: the channel record, the messages, the endpoint manifest and all proofs.
 
 ## 3. Message range and limits
 
@@ -39,7 +39,7 @@ messages := the first n of messages
 
 The range rules, including those for a requestor that misreports `current_received_message_id`, are in [Endpoint sync §4](../../protocol/endpoint-sync/README.md#4-message-range).
 
-The queue metadata is the channel record's fields at `H` ([Bundle §2](../../protocol/bundle.md#2-queue-metadata)). When messages are included, the last message id and running hash are those of the last message selected.
+The queue metadata is the channel record's fields at `H` ([Bundle §2](../../protocol/bundle.md#2-queue-metadata)). It is also written to field 1 of the bundle content ([Besu §3.4](README.md#34-proof-encoding)). When messages are included, the last message id and running hash are those of the last message selected.
 
 ## 4. Manifest inclusion
 

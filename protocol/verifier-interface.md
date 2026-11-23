@@ -2,7 +2,7 @@
 
 > **Category:** Protocol · **Version:** v0.2 · **Last changed:** v0.2
 
-A **verifier contract** checks the proofs that one ledger receives from another. This module defines its abstract interface: two functions, `verifyConfig` and `verifyBundle`, with their inputs, outputs and obligations. Each ledger binds this interface in its verifier API, written in the ledger's contract language ([ledgers](../ledgers/README.md); for example the [EVM verifier API](../ledgers/evm/verifier-api.md)). What a verifier checks inside a proof is defined by the proof scheme it implements.
+A **verifier contract** checks the proofs that one ledger receives from another. This module defines its abstract interface: two functions, `verifyConfig` and `verifyBundle`, with their inputs, outputs and obligations. Each ledger binds this interface in its verifier API: the concrete interface that every verifier on that ledger implements, written in the ledger's contract language ([ledgers](../ledgers/README.md)). A verifier API defines the concrete encoding of the results `VerifiedConfig` and `VerifiedBundle`, and MUST let the CLPR Service recover every item of them that it uses. What a verifier checks inside a proof is defined by the proof scheme it implements.
 
 ## 1. Verifier contracts and trust anchors
 
@@ -20,8 +20,7 @@ A verifier MAY keep global state that is not specific to any channel, such as a 
 
 ```
 verifyConfig(config_proof: bytes, channel_id: bytes32, endpoint_manifest_proof: bytes)
-  → (ctx, chain_id, service_address, config_timestamp, throttles,
-     initial_trust_anchor, initial_trust_anchor_id, endpoint_manifest)
+  → result: VerifiedConfig
 ```
 
 The CLPR Service calls `verifyConfig` once, when it completes a channel ([registration](channel-setup.md#2-registration)).
@@ -34,7 +33,7 @@ Inputs:
 | `channel_id` | `bytes32` | The id of the channel being set up. |
 | `endpoint_manifest_proof` | `bytes` | A proof of the peer CLPR Service's endpoint manifest. Can be empty ([manifest proofs](endpoint-manifest.md#5-manifest-proofs)). |
 
-Outputs:
+Outputs, the fields of `VerifiedConfig`:
 
 | Output | Type | Meaning |
 |---|---|---|
@@ -43,8 +42,8 @@ Outputs:
 | `service_address` | `bytes` | The peer CLPR Service's address, from the configuration that `config_proof` carries. |
 | `config_timestamp` | `timestamp` | The configuration's `timestamp`. Stored as the channel's peer configuration timestamp ([configuration propagation](ledger-configuration.md#5-configuration-propagation)). |
 | `throttles` | `Throttles` | The configuration's throttles. Stored as the channel's peer throttles ([throttles](ledger-configuration.md#3-throttles)). |
-| `initial_trust_anchor` | `bytes` | The channel's first trust anchor. Taken from the configuration's `initial_trust_anchor` when the peer publishes its signing authority there; otherwise derived by the verifier from other proof material in `config_proof`. Empty only when the proof scheme needs no trust anchor. |
-| `initial_trust_anchor_id` | `bytes` | The identifier of `initial_trust_anchor`. Taken from the configuration when present, otherwise computed by the verifier. |
+| `initial_trust_anchor` | `bytes` | The channel's first trust anchor. Taken from the configuration's `initial_trust_anchor` when the proof scheme takes it from there; otherwise derived by the verifier from other proof material in `config_proof`. Empty only when the proof scheme needs no trust anchor. |
+| `initial_trust_anchor_id` | `bytes` | The identifier of `initial_trust_anchor`. Taken from the configuration when the proof scheme takes the trust anchor from there, otherwise computed by the verifier. |
 | `endpoint_manifest` | `EndpointManifest` | The proven manifest, with `version` ≥ 1, or no manifest (version 0, no endpoints) when `endpoint_manifest_proof` is empty. |
 
 Obligations. `verifyConfig` MUST fail if:
@@ -60,8 +59,7 @@ It MUST NOT fail only because the manifest lists no endpoints. Which of these ou
 
 ```
 verifyBundle(bundle: bytes, trust_anchor: bytes, ctx: ChannelContext)
-  → (metadata, messages, last_message_id, last_message_running_hash,
-     new_trust_anchor, new_trust_anchor_id, new_endpoint_manifest)
+  → result: VerifiedBundle
 ```
 
 The CLPR Service calls `verifyBundle` for every bundle submitted on the channel ([bundle processing](channel-state-transitions.md#2-bundle-processing)).
@@ -74,7 +72,7 @@ Inputs:
 | `trust_anchor` | `bytes` | The trust anchor currently stored with the channel. |
 | `ctx` | `ChannelContext` | The channel context stored with the channel. |
 
-Outputs: the abstract bundle content, as defined in [bundle content](bundle.md#1-bundle-content). `new_endpoint_manifest` is absent when the bundle proves no manifest.
+Outputs: `VerifiedBundle` is the abstract bundle content, as defined in [bundle content](bundle.md#1-bundle-content). `metadata` MUST be returned when messages are returned, and MAY otherwise be absent. `new_endpoint_manifest` is absent when the bundle proves no manifest.
 
 Obligations. The verifier:
 
@@ -85,7 +83,7 @@ Obligations. The verifier:
   - the proof is invalid;
   - the proven channel state or last message entry belongs to a channel other than `ctx.channel_id`;
   - a proven manifest's `service_address` differs from `ctx.service_address`;
-  - messages are returned and `last_message_id ≥ metadata.next_message_id`;
+  - messages are returned and `last_message_id` is not less than the source's proven `next_message_id`;
   - messages are returned and the first id, `last_message_id − len(messages) + 1`, is not greater than the source's proven `acked_message_id`.
 - MUST NOT return a `new_endpoint_manifest` with `version` 0.
 - MUST return a non-empty `new_trust_anchor` only as Section 4 allows.

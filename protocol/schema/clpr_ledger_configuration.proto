@@ -3,14 +3,12 @@ syntax = "proto3";
 
 package clpr.v0_2;
 
-import "protocol/schema/clpr_endpoint_manifest.proto";
-
 // A ledger's configuration. Meaning: protocol/ledger-configuration.md §2.
 message ClprLedgerConfiguration {
   // Protocol version. See protocol/ledger-configuration.md §4.
   uint32 protocol_version = 1;
 
-  // CAIP-2 chain identifier, for example "hiero:mainnet" or "eip155:1".
+  // CAIP-2 chain identifier, for example "eip155:295" or "eip155:1".
   string chain_id = 2;
 
   // On-ledger address of the ledger's CLPR Service.
@@ -22,9 +20,8 @@ message ClprLedgerConfiguration {
   // Capacity limits advertised by the ledger. See protocol/ledger-configuration.md §3.
   ClprThrottles throttles = 5;
 
-  // Deprecated and unused; receivers ignore it, whether or not it is populated.
-  // The endpoint set is carried by ClprEndpointManifest. See protocol/ledger-configuration.md §2.
-  repeated ClprEndpoint endpoints = 6 [deprecated = true];
+  reserved 6;
+  reserved "endpoints";
 
   // Initial trust anchor for channels to this ledger. May be empty.
   bytes initial_trust_anchor = 7;

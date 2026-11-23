@@ -1,0 +1,47 @@
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+
+package clpr.v0_2;
+
+import "protocol/schema/clpr_ledger_configuration.proto";
+import "ledgers/schema/clpr_endpoint_manifest.proto";
+import "ledgers/hiero/schema/clpr_channel.proto";
+import "ledgers/hiero/schema/clpr_message_queue.proto";
+
+// A leaf of the Hiero state tree.
+// Meaning: ledgers/hiero/proof-schemes/hints-wraps/README.md §4.2.
+message StateItem {
+  StateKey key = 2;
+  StateValue value = 3;
+}
+
+// The key of a state item. The ledger defines further members; only those
+// that CLPR proofs carry are listed.
+message StateKey {
+  oneof key {
+    // A singleton state item: 59 for the ledger configuration, 66 for the
+    // endpoint manifest.
+    uint32 singleton = 1;
+
+    // A channel, keyed by its channel id.
+    ProtoBytes channel = 60;
+
+    // An outbound queue entry.
+    ClprMessageKey message_queue_entry = 62;
+  }
+}
+
+// The value of a state item. The ledger defines further members; only those
+// that CLPR proofs carry are listed.
+message StateValue {
+  oneof value {
+    ClprLedgerConfiguration ledger_configuration = 59;
+    ClprChannel channel = 60;
+    ClprMessageValue message_queue_entry = 62;
+    ClprEndpointManifest endpoint_manifest = 66;
+  }
+}
+
+message ProtoBytes {
+  bytes value = 1;
+}

@@ -163,6 +163,7 @@ channelContext := channelId ‖ serviceAddress
 | Unchanged trust anchor | `newTrustAnchor` and `newTrustAnchorId` are empty |
 | No endpoint manifest | `version` is 0; the other manifest fields are ignored |
 | No messages | `messagePayloads` is empty; `lastMessageId` and `lastMessageRunningHash` are 0 |
+| No queue metadata | Every `QueueMetadata` field is 0. Allowed only when `messagePayloads` is empty ([bundle content](../../protocol/bundle.md#1-bundle-content)). |
 
 A trust anchor id is non-empty if and only if its trust anchor is non-empty ([Verifier interface §4](../../protocol/verifier-interface.md#4-trust-anchor-changes)).
 

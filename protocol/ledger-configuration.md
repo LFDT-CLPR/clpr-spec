@@ -6,7 +6,7 @@ Every ledger that runs a CLPR Service publishes a **ledger configuration**: its 
 
 ## 1. Ledger identity
 
-A ledger is identified by a **chain id**: a CAIP-2 identifier of the form `namespace:reference` ([conventions](conventions.md#5-identifiers)), for example `hiero:mainnet` or `eip155:1`.
+A ledger is identified by a **chain id**: a CAIP-2 identifier of the form `namespace:reference` ([conventions](conventions.md#5-identifiers)), for example `eip155:295` or `eip155:1`.
 
 - Public networks SHOULD use a registered CAIP-2 namespace. Private networks MAY assign their own chain id.
 - The chain id is not unique to one CLPR Service. A peer CLPR Service is identified by the pair (chain id, service address), where the service address is the `service_address` of its configuration (Section 2).
@@ -20,11 +20,10 @@ A ledger is identified by a **chain id**: a CAIP-2 identifier of the form `names
 |---|---|---|
 | `protocol_version` | `uint32` | The protocol version the CLPR Service implements (Section 4). |
 | `chain_id` | `string` | The ledger's chain id (Section 1). |
-| `service_address` | `bytes` | The on-ledger address of this ledger's CLPR Service: a contract address on EVM ledgers, a constant defined by the ledger on others ([Hiero](../ledgers/hiero/README.md#1-ledger-identity)). `verifyConfig` returns it so that the peer can build the [channel context](channel-setup.md#3-channel-context). |
+| `service_address` | `bytes` | The on-ledger address of this ledger's CLPR Service, in the form its Ledger Specifications define ([ledgers](../ledgers/README.md)). `verifyConfig` returns it so that the peer can build the [channel context](channel-setup.md#3-channel-context). |
 | `timestamp` | `timestamp` | The consensus timestamp of the transaction that last changed the configuration. It strictly increases with every change. Its valid range is defined in [`schema/`](schema/clpr_ledger_configuration.proto). |
 | `throttles` | `Throttles` | The limits this ledger imposes (Section 3). Required. |
-| `endpoints` | `Endpoint[]` | **Deprecated.** Receivers MUST ignore it, whether or not it is populated. The endpoint set is the [endpoint manifest](endpoint-manifest.md). |
-| `initial_trust_anchor` | `bytes` | The trust anchor with which a verifier starts trusting this ledger. A ledger whose proof schemes take the initial trust anchor from the configuration MUST populate it (for example [Hiero](../ledgers/hiero/proof-schemes/hints-wraps.md#9-configuration-and-manifest-proofs), where it is the ledger id). It is empty when the proof schemes derive the initial trust anchor from other proof material in the configuration proof. See [verifier interface](verifier-interface.md#2-verifyconfig). |
+| `initial_trust_anchor` | `bytes` | The trust anchor with which a verifier starts trusting this ledger. A ledger whose proof schemes take the initial trust anchor from the configuration MUST populate it, and its Ledger Specifications state when it is populated. It is empty when every proof scheme of the ledger derives the initial trust anchor from other proof material in the configuration proof. A configuration that lacks the trust anchor a proof scheme takes from it cannot complete a channel that uses that scheme. See [verifier interface](verifier-interface.md#2-verifyconfig). |
 | `initial_trust_anchor_id` | `bytes` | An opaque identifier of `initial_trust_anchor`, in a format defined by the proof scheme. It MUST be non-empty if and only if `initial_trust_anchor` is non-empty. |
 
 A ledger's configuration is changed only by its own CLPR Service administration ([Blueprint](../blueprint/clpr-service.md#2-administration)). Each change sets `timestamp` to the consensus time of the changing transaction.
@@ -38,7 +37,7 @@ Each ledger keeps, per channel, a copy of the **peer throttles**: set from `veri
 | Field | Type | Meaning | Which value applies |
 |---|---|---|---|
 | `max_messages_per_bundle` | `uint32` | Maximum number of messages in one bundle. | The sending endpoint MUST NOT exceed the peer's value. The receiving CLPR Service MUST reject a bundle that exceeds its own value. |
-| `max_message_payload_bytes` | `uint32` | Maximum length of the `message_data` of a DATA message. It does not apply to other message types. | The source CLPR Service MUST reject, at enqueue, a message that exceeds the peer's value ([enqueue](messaging.md#5-enqueue)). The destination CLPR Service MUST reject a bundle containing a DATA message that exceeds its own value. |
+| `max_message_payload_bytes` | `uint32` | Maximum length of the payload bytes ([payload encoding](messaging.md#3-payload-encoding)) of a DATA or REPLY message. It does not apply to CONTROL messages. | The source CLPR Service MUST reject, at enqueue, a DATA message that exceeds the peer's value ([enqueue](messaging.md#5-enqueue)). The destination CLPR Service MUST reject a bundle containing a DATA message that exceeds its own value. A CLPR Service MUST keep each REPLY it enqueues within the peer's value ([delivery](messaging.md#6-delivery-to-the-application)). |
 | `max_gas_per_message` | `uint64` | Maximum gas, or equivalent execution budget, allocated to processing one message. | Each CLPR Service MUST apply its own value to the messages it processes. |
 | `max_queue_depth` | `uint32` | Maximum number of messages in a channel's outbound queue that the peer has not acknowledged. When the queue is full, new messages are rejected. | Each CLPR Service MUST apply its own value to its own outbound queues ([enqueue](messaging.md#5-enqueue)). |
 | `max_sync_bytes` | `uint64` | Maximum length of a bundle's proof bytes (the `bundle_payload` submitted to the CLPR Service). The endpoint sync envelope is not counted. | The sending endpoint MUST NOT exceed the peer's value. The receiving CLPR Service MUST reject a larger bundle. A receiving endpoint MAY discard a larger bundle without submitting it. |
@@ -48,7 +47,7 @@ Each ledger keeps, per channel, a copy of the **peer throttles**: set from `veri
 Constraints on a ledger's own configuration:
 
 - `max_messages_per_bundle`, `max_message_payload_bytes`, `max_gas_per_message`, `max_queue_depth` and `max_sync_bytes` MUST be greater than zero.
-- `max_sync_bytes` MUST be greater than `max_message_payload_bytes` plus the overhead of delivering one message: proof material, queue metadata and message framing. Otherwise a message of the maximum size can never be delivered and the channel stops. The overhead depends on the proof scheme.
+- `max_sync_bytes` MUST be at least `max_message_payload_bytes` plus the overhead of delivering one message: proof material, queue metadata and message framing. Otherwise a message of the maximum size can never be delivered and the channel stops. The overhead depends on the proof scheme.
 
 Limits are published so that a peer is never penalized for a reason it cannot determine from the published configuration.
 
@@ -56,7 +55,7 @@ Default values are deployment choices ([Blueprint](../blueprint/clpr-service.md#
 
 ## 4. Protocol version
 
-The protocol version is a non-negative integer. It increases with every change to the Protocol that breaks interoperability. A CLPR Service implementing this version of the specification MUST set `protocol_version` to **1**.
+The protocol version is a non-negative integer. It increases with every change to the Protocol that breaks interoperability. A CLPR Service MUST set `protocol_version` to **1**.
 
 - Both sides of a channel MUST use the same protocol version. Messaging between different protocol versions is not supported.
 - A CLPR Service MUST reject a ConfigUpdate whose `configuration.protocol_version` differs from its own (Section 5.3).
@@ -94,13 +93,17 @@ Because the ConfigUpdate occupies a position in the queue fixed by consensus, bo
 
 ### 5.3 Receiving
 
-When a bundle delivers a ConfigUpdate ([bundle processing](channel-state-transitions.md#2-bundle-processing)), the receiving CLPR Service MUST reject the whole bundle if:
+When a bundle delivers a ConfigUpdate ([bundle processing](channel-state-transitions.md#2-bundle-processing)) whose `configuration` is absent, the receiving CLPR Service MAY reject the whole bundle. If it does not, the ConfigUpdate changes no channel state.
+
+When a bundle delivers a ConfigUpdate with a `configuration`, the receiving CLPR Service MUST reject the whole bundle if:
 
 - `configuration.protocol_version` differs from its own protocol version, or
 - `configuration.timestamp` is not a valid timestamp ([`schema/`](schema/clpr_ledger_configuration.proto)), or
 - `configuration.timestamp` is not strictly greater than the channel's stored peer configuration timestamp, as updated by any earlier ConfigUpdate in the same bundle.
 
-Otherwise it replaces the channel's peer configuration timestamp and peer throttles with `configuration.timestamp` and `configuration.throttles`. It does not apply the other fields.
+It MAY also reject the bundle if `configuration.throttles` is absent or violates the constraints of Section 3.
+
+Otherwise it replaces the channel's peer configuration timestamp with `configuration.timestamp`, and its peer throttles with `configuration.throttles` when they are present. It does not apply the other fields.
 
 ## History
 

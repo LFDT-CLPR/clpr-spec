@@ -9,7 +9,7 @@ This proof scheme proves Besu CLPR Service state under QBFT seals, and follows v
 | Role | Performed by |
 |---|---|
 | Bundle producer | The Besu CLPR Endpoint |
-| Verifiers | A verifier contract for EVM ledgers |
+| Verifiers | A verifier contract for EVM ledgers; Hiero's built-in verifier at `0x…016f` |
 
 ## 2. Trust model
 
@@ -40,7 +40,7 @@ To forge a bundle an attacker must hold the keys of a quorum of the trusted set,
 In addition to the abstract bundle content, a producer collects:
 - the RLP header of `H`;
 - the member list of the anchored set, and the headers of every block after the anchored block and before `H` whose listed set differs from the previous block's;
-- the proofs of the CLPR Service state, as in [qbft-epoch §3](qbft-epoch.md#3-proof-material).
+- the proofs of the CLPR Service state at `H` ([Besu §3.6](../README.md#36-producing-the-state-proofs)).
 
 ## 4. Wire layout
 
@@ -48,7 +48,7 @@ The bundle is an RLP list of 5 items, or 7 when it carries the endpoint manifest
 
 | Index | Item | Encoding |
 |---|---|---|
-| 0 | Header of `H` | RLP list of 15 to 22 header fields |
+| 0 | Header of `H` | RLP list of at least 15 header fields |
 | 1 | Validator source | RLP list `[trustedSet, hops]` |
 | 2 | Account proof | [Proof encoding](../README.md#34-proof-encoding) |
 | 3 | Channel storage proof | [Proof encoding](../README.md#34-proof-encoding) |
@@ -58,7 +58,7 @@ The bundle is an RLP list of 5 items, or 7 when it carries the endpoint manifest
 
 | Field of item 1 | Encoding |
 |---|---|
-| `trustedSet` | RLP list of at most 256 non-zero 20-byte addresses: the members of the anchored set, in any order. The empty list means "the set listed in the header of `H`". |
+| `trustedSet` | RLP list of at most 256 non-zero 20-byte addresses: the members of the anchored set, in any order. The empty list means "the set listed in the header of `H`"; a producer MUST send it only when `hops` is empty and `T` equals that set. |
 | `hops` | RLP list of headers, each an RLP list of at least 15 fields, in strictly ascending block order; can be empty |
 
 ## 5. Encoding algorithm
@@ -70,14 +70,17 @@ A := the anchored block number (the peer's trust anchor id)
 T := the validator set listed in the header of block A
 hops := the headers of blocks b with A < b and b < number(H) whose listed set differs from
         block b − 1's, in ascending order
-if T equals the set listed in H then trustedSet := [] else trustedSet := the members of T
+if hops is empty and T equals the set listed in H then trustedSet := []
+else trustedSet := the members of T
 items := [headerAt(H), [trustedSet, hops], accountProof, storageProof, content]
 if the manifest is included then
     append manifestProof and manifestPreimage to items
 bundle := RLP(items)
 ```
 
-`number(H)` MUST be greater than `A`. The state proofs, content and manifest items are built as in [qbft-epoch §5](qbft-epoch.md#5-encoding-algorithm).
+`number(H)` MUST be greater than `A`. The state proofs, content and manifest items are built as in [Besu §3.6](../README.md#36-producing-the-state-proofs).
+
+A producer MAY leave out a block that changes the listed set, as long as every hop it carries lists a set different from the set before it and passes the header rule against it. A producer MAY bound the number of hops in one bundle. When more blocks after `A` change the listed set than that bound allows, `H` is the first such block after the last hop carried, and the peer catches up over several bundles.
 
 ## 6. Decode-and-verify algorithm
 
@@ -110,7 +113,7 @@ function verifyBundle(proof, anchor, ctx):
     items := decode RLPList(proof)
     if len(items) ≠ 5 and len(items) ≠ 7 then reject "payload shape"
     header := items[0]
-    if header does not have 15 to 22 fields then reject "header shape"
+    if header has fewer than 15 fields then reject "header shape"
     listedNow := the distinct validators listed in header's extraData
 
     source := decode RLPList(items[1])
@@ -125,6 +128,8 @@ function verifyBundle(proof, anchor, ctx):
     for each hop in hops
         if hop has fewer than 15 fields then reject "header shape"
         if number(hop) ≤ last then reject "hops not ascending"
+        if the distinct validators listed in hop's extraData equal current then
+            reject "hop does not change the set"
         current := AcceptHeader(hop, current)
         last := number(hop)
     if number(header) ≤ last then reject "header not after the walk"
@@ -146,11 +151,11 @@ function verifyBundle(proof, anchor, ctx):
     return (metadata, payloads, newAnchor, newAnchorId, manifest)
 ```
 
-`Signers`, `Quorum` and `RequireQuorum` are defined in [Besu §4.2](../README.md#42-qbft-headers-and-seals), and `VerifyServiceState` in [Besu §3.5](../README.md#35-verifying-the-clpr-service-state). Sets are lists of distinct addresses, compared without regard to order.
+`Signers`, `Quorum` and `RequireQuorum` are defined in [Besu §4.2](../README.md#42-qbft-headers-and-seals), and `VerifyServiceState` in [Besu §3.5](../README.md#35-verifying-the-clpr-service-state). Sets are lists of distinct addresses, compared without regard to order. A verifier MAY reject a header that lists a validator more than once.
 
 ## 7. Trust anchor changes
 
-**Contents.** The trust anchor's encoding is internal to the verifier contract. The scheme requires it to determine:
+**Contents.** The trust anchor's encoding is internal to the verifier; Hiero's built-in verifier uses the encoding of [§9.1](#91-configuration-proof). The scheme requires it to determine:
 
 | Content | Meaning |
 |---|---|
@@ -170,11 +175,12 @@ A verifier MUST reject the bundle when:
 |---|
 | The trust anchor or the channel context is malformed. |
 | The bundle is shorter than 2 bytes, or is not an RLP list of 5 or 7 items. |
-| The header of `H` does not have 15 to 22 fields, or a hop has fewer than 15 fields. |
+| The header of `H` or a hop has fewer than 15 fields. |
 | A header's `extraData` is not the five-item QBFT list, or its validator list holds an item that is not a non-zero 20-byte address. |
 | Item 1 is not a list of exactly 2 items, or `trustedSet` holds an item that is not a non-zero 20-byte address, or more than 256 items. |
 | The members supplied for the trusted set are not exactly `T`. |
 | A hop's number is not greater than the previous hop's, or than `A` for the first hop. |
+| A hop lists the same set as the set it is checked against. |
 | The number of `H` is not greater than the last hop's, or than `A` when there are no hops. |
 | A header fails the header rule: a set is empty or has more than 256 members, the sets differ by more than one member, the trust link or own quorum is not reached, there are no seals, or a seal is not 65 bytes or does not recover. |
 | Any condition of [Besu §3.5](../README.md#35-verifying-the-clpr-service-state). |
@@ -183,7 +189,9 @@ A verifier MUST reject the bundle when:
 
 ### 9.1 Configuration proof
 
-The configuration proof is an RLP list of 6 items. Items 0 to 4 are shared with [qbft-contract](qbft-contract.md#91-configuration-proof).
+A configuration proof takes one of two forms: the RLP form, which verifier contracts for EVM ledgers accept, and the protobuf form, which Hiero's built-in verifier accepts.
+
+**RLP form.** The configuration proof is an RLP list of 6 items. Items 0 to 4 are shared with [qbft-contract](qbft-contract.md#91-configuration-proof).
 
 | Index | Item | Encoding |
 |---|---|---|
@@ -217,6 +225,16 @@ function verifyConfig(config, channelId, manifestProof):
 The configuration proof establishes the initial validator set: the set the configuration header lists, checked against that header's own seals. Other `verifyConfig` outputs are registration inputs; which outputs a configuration proof must authenticate is open issue [OI-1](../../../protocol/open-issues.md#oi-1-what-the-configuration-proof-must-authenticate).
 
 A verifier MUST reject the configuration proof when it is empty, is not an RLP list of 6 items, has a header with fewer than 15 fields, has a throttles list of other than 5 or 7 items, has a descriptor that is not a 2-item list with mode 0, or when the header fails `RequireQuorum` against its own set.
+
+**Protobuf form.** The configuration proof is a serialized `ClprQbftLedgerConfigurationPayload` ([Besu schema](../schema/README.md)), decoded under strict decoding. `contract_mode_validator_source` (field 6) is absent; when it is present, the proof is in the [qbft-contract](qbft-contract.md#91-configuration-proof) protobuf form.
+
+- `ledger_configuration` (field 2) supplies the configuration values that `verifyConfig` returns. They are registration inputs, as in the RLP form.
+- `current_block_header` (field 3) holds a header of at least 15 fields. `V` is the validator set it lists, and the header MUST pass `RequireQuorum(header, V)`.
+- `clpr_service_account_proof` (field 4) is required. It proves the account of the configuration's service address under the header's `stateRoot`, and `codeHash` is that account's code hash.
+- When `clpr_service_storage_proofs` (field 5) holds an entry for slot 25 ([Besu §3.1](../README.md#31-service-slots)), the proven value MUST be the configuration's service address.
+- `genesis_block_header` (field 1) is ignored.
+
+The initial trust anchor is `RLP([0x00, RLP(V in ascending byte order), serviceAddress, codeHash, be(number(header), 8)])`, and its id is `be(number(header), 8)`. A verifier MUST reject the proof when it does not decode, when field 2 or field 3 is absent, when the header fails `RequireQuorum`, or when the account or slot 25 proof fails.
 
 ### 9.2 Manifest proof
 

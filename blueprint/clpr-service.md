@@ -38,14 +38,13 @@ A channel record holds the [shared channel state](../protocol/channel-setup.md#6
 
 At completion, the peer fields are set from `verifyConfig`.
 
-- On Hiero, a completed channel's commitment stays registered.
-- On EVM ledgers, the commitment is deleted at completion, and the verifier code hash is emitted at completion rather than stored. The record also holds the channel `salt` ([EVM channel identity](../ledgers/evm/README.md#4-channel-identity)), the peer's service address, and the bookkeeping of [§1.5](#15-reply-and-acknowledgement-bookkeeping). Timestamps are stored as one `uint96` count of nanoseconds since the Unix epoch and converted only at the wire boundary.
+- On EVM ledgers, the verifier code hash is emitted at completion rather than stored. The record also holds the channel `salt` ([EVM channel identity](../ledgers/evm/README.md#4-channel-identity)), the peer's service address, and the bookkeeping of [§1.5](#15-reply-and-acknowledgement-bookkeeping). Timestamps are stored as one `uint96` count of nanoseconds since the Unix epoch and converted only at the wire boundary.
 
 ### 1.2 Message queue
 
 Each queue entry holds the message payload ([payload encoding](../protocol/messaging.md#3-payload-encoding)) and the running hash after that message ([running hash](../protocol/messaging.md#4-running-hash)). Entries are retained and deleted as [acknowledgement](../protocol/messaging.md#9-acknowledgement) specifies.
 
-On EVM ledgers, each entry also records the connector id of a DATA message. This lets the Service attribute the REPLY to the connector even after the DATA payload is redacted.
+On EVM ledgers, each entry also records the connector id of a DATA message. This lets the Service attribute the REPLY to the connector.
 
 ### 1.3 Connector record and counters
 
@@ -77,7 +76,7 @@ The checks on `sendMessage` are specified in [enqueue](../protocol/messaging.md#
 
 Each REPLY matches the oldest outbound DATA message that has no REPLY yet ([response ordering](../protocol/messaging.md#8-response-ordering)). The Service SHOULD keep a reply cursor: the id of that message, advanced past CONTROL and REPLY entries. It SHOULD also keep the id of the last DATA message enqueued. Every DATA message is answered once the cursor passes that id, which is the CLOSING → DRAINED check.
 
-On Hiero, the Service instead walks the retained entries above its stored acknowledgement. It caps that acknowledgement, as local bookkeeping, at the last DATA message whose REPLY has been processed, and a bundle with an out-of-order REPLY leaves it unchanged. On EVM ledgers, the stored acknowledgement is the peer's `received_message_id` ([acknowledgement](../protocol/messaging.md#9-acknowledgement)).
+On Hiero, the Service instead walks the retained entries above its stored acknowledgement, and stores the [answered acknowledgement](../protocol/messaging.md#9-acknowledgement); a bundle with an out-of-order REPLY leaves it unchanged. On EVM ledgers, the stored acknowledgement is the peer's `received_message_id` ([acknowledgement](../protocol/messaging.md#9-acknowledgement)).
 
 ## 2. Administration
 
@@ -98,19 +97,18 @@ A Service SHOULD offer the following operations. Each ledger maps them to its ow
 | `topUpConnectorStake` | any | [Connector stake](stakes-and-bonds.md#1-connector-stake) (EVM ledgers) |
 | `sendMessage` | any | [Enqueue](../protocol/messaging.md#5-enqueue) |
 | `submitBundle` | any | [Bundle processing](../protocol/channel-state-transitions.md#2-bundle-processing), [§5](#5-bundle-submission) |
-| `redactMessage` | administrator | [§2.6](#26-redaction) (deprecated) |
 | enable or disable | administrator | [§2.3](#23-initialization-and-kill-switch) |
 | `updateLedgerConfiguration` | administrator | [§2.4](#24-configuration-updates) |
 | `updateEconomicConfiguration` | administrator | [§2.4](#24-configuration-updates) (EVM ledgers) |
 | `registerEndpoint`, `addEndpoint`, `removeEndpoint`, `updateEndpointManifest` | see §3.2 | [§3.2](#32-registration-and-admission) |
-| `getLedgerConfiguration`, `getEndpointManifest`, queue and connector queries | any | [§2.7](#27-queries) |
+| `getLedgerConfiguration`, `getEndpointManifest`, queue and connector queries | any | [§2.6](#26-queries) |
 | `collectPending` | any | [Payment flow](channel-economics.md#2-payment-to-the-bundle-submitter) (EVM ledgers) |
 
 ### 2.3 Initialization and kill switch
 
 **Initialization** sets the chain id, protocol version, service address, throttles and economic parameters, and creates the local manifest at version 1 with no endpoints. The chain id and protocol version do not change afterwards. On Hiero, the ledger creates this state itself; on EVM ledgers, the administrator initializes the deployed Service once.
 
-**Kill switch.** The Service SHOULD have an enable flag, checked on every call. While it is off, the Service SHOULD reject every operation except those that initialize and re-enable it. On Hiero, the flag is on by default; on EVM ledgers, it is off until the administrator enables it after initialization.
+**Kill switch.** The Service SHOULD have an enable flag, checked on every call. While it is off, the Service SHOULD reject every operation except those that initialize and re-enable it. On Hiero, the flag is the network property `clpr.enabled`, on by default; on EVM ledgers, it is off until the administrator enables it after initialization.
 
 ### 2.4 Configuration updates
 
@@ -118,7 +116,7 @@ A Service SHOULD offer the following operations. Each ledger maps them to its ow
 
 The Service SHOULD reject an update that violates the constraints of [throttles](../protocol/ledger-configuration.md#3-throttles).
 
-- On Hiero, the per-message overhead used in the `max_sync_bytes` check is 65,536 bytes, and an update is rejected unless its service address is empty or the Service's own.
+- On Hiero, the per-message overhead used in the `max_sync_bytes` check is 65,536 bytes, and an update is rejected unless its service address is empty or the Service's own. The first update after the ledger id exists also sets the configuration's trust anchor fields ([Hiero ledger identity](../ledgers/hiero/README.md#1-ledger-identity)).
 - On EVM ledgers, the update also sets the service address and the configuration's trust anchor fields. It is rejected if only one of the anchor and its id is set. Because consensus time is the block time, the administrator SHOULD apply at most one configuration update per block, so that each update has a later timestamp.
 
 **Economic parameters** are the parameters in [§4.2](#42-service-parameters). On Hiero, they are network properties, changed through the ledger's network configuration. On EVM ledgers, the administrator changes them with `updateEconomicConfiguration`, which enforces the bounds in [§4.2](#42-service-parameters).
@@ -129,20 +127,14 @@ The Service SHOULD reject an update that violates the constraints of [throttles]
 
 | Status | Effect |
 |---|---|
-| PENDING (registered commitment, not completed) | The commitment is removed |
-| ACTIVE, PAUSED | → CLOSING. In the same step → DRAINED if no DATA message remains in the outbound queue ([closing and draining](../protocol/channel-state-transitions.md#5-closing-and-draining)) |
-| DRAINED | → CLOSED, only if `acked_message_id ≥ next_message_id − 1`; otherwise rejected |
+| PENDING (registered commitment, not completed) | The commitment, which the call names, is removed |
+| ACTIVE, PAUSED | The [administrative close](../protocol/channel-state-transitions.md#5-closing-and-draining) |
+| DRAINED | The [recovery close](../protocol/channel-state-transitions.md#5-closing-and-draining) |
 | CLOSING, CLOSED | Rejected |
 
-The DRAINED → CLOSED path is the recovery when no bundle from the peer will close the channel. Because every outbound message is acknowledged, nothing is abandoned.
+The recovery close is the path when no bundle from the peer will close the channel.
 
-### 2.6 Redaction
-
-`redactMessage` is deprecated and SHOULD NOT be used ([redaction](../protocol/messaging.md#10-redaction-deprecated)). It accepts only a DATA message that is not yet redacted and whose id is above `acked_message_id` and below `next_message_id`. It replaces the payload with its redacted form and keeps the message id and running hash.
-
-On Hiero, redaction is allowed in any channel status. On EVM ledgers, it decrements the connector's quota count ([queue quotas](channel-economics.md#3-queue-quotas)).
-
-### 2.7 Queries
+### 2.6 Queries
 
 The Service SHOULD offer these read operations to any caller. None of them is part of [endpoint sync](../protocol/endpoint-sync/README.md).
 
@@ -154,7 +146,7 @@ The Service SHOULD offer these read operations to any caller. None of them is pa
 | `getConnector` | A connector's record ([§1.3](#13-connector-record-and-counters)) |
 | `deriveConnectorId` | The [connector id](../protocol/connector-setup.md#1-connector-identity) for given inputs (MAY be offered) |
 
-On Hiero, the configuration and manifest responses also carry a state proof of the returned value ([configuration and manifest proofs](../ledgers/hiero/proof-schemes/hints-wraps.md#9-configuration-and-manifest-proofs)).
+On Hiero, the configuration and manifest responses also carry a state proof of the returned value ([configuration and manifest proofs](../ledgers/hiero/proof-schemes/hints-wraps/README.md#9-configuration-and-manifest-proofs)).
 
 ## 3. Endpoint admission
 
@@ -170,7 +162,7 @@ This section covers how endpoints enter and leave the [local manifest](../protoc
 
 ### 3.2 Registration and admission
 
-Ledgers where any party can offer an endpoint, such as EVM ledgers, SHOULD use a two-step model. An endpoint registers, and the administrator admits it. Endpoints are not bonded ([endpoints](stakes-and-bonds.md#3-endpoints)).
+Ledgers where any party can offer an endpoint, such as EVM ledgers, SHOULD use a two-step model. An endpoint registers, and the administrator admits it. A Service MAY require a refundable deposit at registration.
 
 The Service keeps one entry per registrant account:
 
@@ -183,23 +175,14 @@ The registrant account is the caller of `registerEndpoint`. It is unique among e
 
 | Operation | Caller | Effect | Version |
 |---|---|---|---|
-| `registerEndpoint(endpoint)` | any | Creates a PENDING entry. Rejected if an entry exists. The Service MAY validate the endpoint data, for example the certificate check of the [EVM family](../ledgers/evm/README.md#6-endpoint-certificates) | Unchanged |
+| `registerEndpoint(endpoint)` | any | Creates a PENDING entry. Rejected if an entry exists. The Service MAY validate the endpoint data; EVM ledgers apply the certificate check of the [EVM family](../ledgers/evm/README.md#6-endpoint-certificates) | Unchanged |
 | `addEndpoint(registrant, endpoint)` | administrator | Promotes a PENDING entry, using its registered data. With no entry, adds `endpoint` directly. Rejected if the entry is already LIVE or the manifest is full | +1 |
 | `removeEndpoint(registrant)` | registrant or administrator | Removes the entry | +1 if the entry was LIVE |
-| `updateEndpointManifest(add, remove)` | administrator | Applies a batch atomically. Removals come first and skip unknown accounts. Additions follow `addEndpoint` and skip entries already LIVE. Rejected if the result would exceed `max_local_endpoints` | +1 once, if anything changed |
+| `updateEndpointManifest(add, remove)` | administrator | Applies a batch atomically. Removals come first and skip unknown accounts. Additions follow `addEndpoint`; an addition that names an entry already LIVE rejects the batch. Rejected if the result would exceed `max_local_endpoints` | +1 once, if anything changed |
 
 ### 3.3 Roster-derived manifest
 
-On a ledger whose consensus nodes are its endpoints, the Service MAY derive the manifest from the node roster instead, with no administrator operations. Hiero does this:
-
-1. Each node publishes its own endpoint (network address, TLS certificate, and node account) in a node-only transaction, at startup if it is absent from the manifest.
-2. A publication from a roster node whose endpoint is not in the manifest opens a **construction** for the next version, targeting the active roster, with a deadline `manifestGracePeriod` away.
-3. While a construction is open, the Service gathers publications from target nodes. A later publication from the same node replaces the earlier one.
-4. The construction closes when every target has published. Otherwise, at the deadline it is extended by `manifestGraceExtension`, up to `manifestMaxGraceExtensions` times, and then closed regardless.
-5. On close, the manifest becomes exactly the gathered endpoints. Its version increases by 1 if the endpoint list changed and is unchanged otherwise.
-6. When a network upgrade changes the roster's composition, a new construction for the new roster replaces any open one.
-
-A change in node weights alone does not change the manifest. A misbehaving node is removed through the ledger's own governance of the roster.
+On a ledger whose consensus nodes are its endpoints, the Service MAY derive the manifest from the node roster instead, with no administrator operations. Hiero does this ([Hiero endpoint manifest](../ledgers/hiero/README.md#7-endpoint-manifest)).
 
 ## 4. Configuration parameters
 
@@ -215,7 +198,7 @@ The meaning of each throttle is defined in [throttles](../protocol/ledger-config
 | `max_gas_per_message` | min(15,000,000, the ledger's maximum gas per transaction) | 1,000,000 |
 | `max_sync_bytes` | 4,194,304 | 1,048,576 |
 | `max_local_endpoints` | 0 (no limit) | 0 (no limit) |
-| `max_peer_endpoints` | 0 (no limit) | 0 (no limit) |
+| `max_peer_endpoints` | 100 | 0 (no limit) |
 
 A bundle can carry `max_messages_per_bundle` messages of the maximum size only if `max_sync_bytes ≥ max_message_payload_bytes × max_messages_per_bundle + proof overhead`. With a smaller `max_sync_bytes`, as in the Hiero defaults above, the sending endpoint puts fewer large messages in each bundle. If a bundle that carries a manifest proof is larger than the peer's `max_sync_bytes`, the peer's administrator can raise `max_sync_bytes`, or the local administrator can lower `max_local_endpoints`.
 
@@ -223,7 +206,7 @@ A bundle can carry `max_messages_per_bundle` messages of the maximum size only i
 
 ### 4.2 Service parameters
 
-Amounts are in the ledger's smallest currency unit: 10⁻⁸ of a whole token on Hiero, and wei on EVM ledgers. "—" means the parameter does not exist on that ledger. Parameter names are informative; each ledger binds its own.
+Amounts are in the ledger's smallest currency unit: 10⁻⁸ of a whole token on Hiero, and the smallest unit of the Service's fee asset on EVM ledgers ([execution charges](channel-economics.md#1-execution-charges)). "—" means the parameter does not exist on that ledger. Parameter names are informative; each ledger binds its own.
 
 | Parameter | Hiero | EVM ledgers | Meaning |
 |---|---|---|---|
@@ -232,16 +215,17 @@ Amounts are in the ledger's smallest currency unit: 10⁻⁸ of a whole token on
 | `slashBasePenalty` | 10,000,000 | 10¹⁶ | Base penalty ([slashing](stakes-and-bonds.md#2-slashing-and-bans)) |
 | `slashMultiplier` | 2 | 2 | Penalty multiplier per earlier slash |
 | `slashBanThreshold` | 5 | 5 | Slash count at which a connector is banned |
-| `messageExecutionCost` | 1,000,000 | — (not used) | Flat execution charge per DATA message ([execution charges](channel-economics.md#1-execution-charges)) |
+| `messageExecutionCost` | 1,000,000 | 10¹⁵; 0 disables execution charging | Flat execution charge per DATA message on Hiero; the execution-charging switch on EVM ledgers ([execution charges](channel-economics.md#1-execution-charges)) |
 | `endpointMarginPercent` | 10 | 10 | Margin added to execution charges |
 | `connectorQueueQuotaPct` | 50 | 50 (below 100) | Per-connector share of `max_queue_depth` ([queue quotas](channel-economics.md#3-queue-quotas)) |
 | `connectorPaymentGasLimit` | — | 200,000 (minimum 50,000) | Gas for the connector's payment call |
 | `connectorInboundGasStipend` | — | 500,000 | Gas for the connector's inbound-message notification ([§6.4](#64-reentrancy-and-external-calls)) |
 | `maxChannels`, `maxConnectors` | — | 0 (no limit) | Caps on channel and connector counts |
-| `verifierGasLimit` | 300,000 | all available gas | Gas given to a verifier call |
-| `manifestGracePeriod` | 300 s | — | Construction deadline ([§3.3](#33-roster-derived-manifest)) |
+| `verifierGasLimit` | 2,000,000 | all available gas | Gas given to a verifier call |
+| `manifestGracePeriod` | 300 s | — | Construction deadline ([Hiero endpoint manifest](../ledgers/hiero/README.md#7-endpoint-manifest)) |
 | `manifestGraceExtension` | 300 s | — | Length of each extension |
 | `manifestMaxGraceExtensions` | 2 | — | Maximum number of extensions |
+| Peer manifest size cap | 16,384 bytes | — | Largest stored encoding of a peer manifest ([peer manifest](../protocol/endpoint-manifest.md#4-peer-manifest)) |
 
 ## 5. Bundle submission
 
@@ -260,7 +244,7 @@ An endpoint SHOULD NOT submit a bundle that the Service would reject. A rejected
 - **Progress.** The endpoint SHOULD evaluate the [progress criteria](../protocol/channel-state-transitions.md#3-progress) against its last known view of the destination channel: the received message id, the trust anchor id, and the manifest version the peer reported. If no criterion holds, it does not submit.
 - **Verification.** The endpoint SHOULD check that the bundle verifies and processes before submitting it, for example by a read-only preview of the submission.
 
-On Hiero, the receiving node submits without verifying the bundle; the sending node verifies its own proof before sending. When a node sends nothing is defined in [Hiero bundle aggregation §5](../ledgers/hiero/bundle-aggregation.md#5-when-nothing-is-sent).
+On Hiero, the receiving node checks every bundle before submitting it: the channel status, the size, local verification, the trust anchor and progress. It skips a bundle that makes no progress. The sending node also verifies its own proofs. When a node sends nothing is defined in [Hiero bundle aggregation §5](../ledgers/hiero/bundle-aggregation.md#5-when-nothing-is-sent).
 
 On EVM ledgers, the endpoint previews every submission against pending state and skips any bundle that would revert.
 
@@ -270,11 +254,11 @@ An endpoint SHOULD choose sync peers from the peer manifest at random, weighted 
 
 ### 5.4 Bundle size for EVM receivers of Hiero bundles
 
-Verifying a Hiero bundle on an EVM ledger is expensive, and the cost grows with the number of messages. The verifier also accepts at most 64 proof paths: one for the channel, one for the manifest when included, and one per message.
+Verifying a Hiero bundle on an EVM ledger is expensive, and the cost grows with the number of messages. A bundle carries one proof path for the channel, one for the manifest when included, and one per message, within the path limits of the [`hints`](../ledgers/hiero/proof-schemes/hints/README.md#45-limits) scheme.
 
 An EVM ledger that receives bundles from Hiero SHOULD set `max_messages_per_bundle` so that a full bundle stays within the path limit and within the ledger's per-transaction gas limit. On a ledger with a low per-transaction gas cap, a bundle can carry only a few messages.
 
-A Hiero network can produce verifiable bundles only after its WRAPS proof setup has completed ([hinTS with WRAPS](../ledgers/hiero/proof-schemes/hints-wraps.md)).
+EVM receivers verify the [`hints`](../ledgers/hiero/proof-schemes/hints/README.md) scheme, which needs only the ledger's hinTS signatures. Hiero receivers verify [`hints-wraps`](../ledgers/hiero/proof-schemes/hints-wraps/README.md), which needs the WRAPS proof setup to have completed as well.
 
 ## 6. Security considerations
 
@@ -288,7 +272,7 @@ For a peer ledger without instant finality, a verifier SHOULD accept only final 
 
 ### 6.3 Endpoint admission
 
-On ledgers with endpoint registration, the defense against Sybil endpoints is administrator curation ([§3.2](#32-registration-and-admission)). Endpoints are not bonded or slashed ([endpoints](stakes-and-bonds.md#3-endpoints)), and the Service keeps no endpoint reputation. The administrator MAY evict misbehaving endpoints ([§3.2](#32-registration-and-admission)), and the transaction fee deters the submission of stale manifest bundles. Curation places full trust in the administrator, including trust that it will not empty the manifest. Endpoints SHOULD randomize peer selection ([§5.3](#53-peer-selection)).
+On ledgers with endpoint registration, the defense against Sybil endpoints is administrator curation ([§3.2](#32-registration-and-admission)). Endpoints are not slashed or penalized for the bundles they submit; they submit at their own cost and recover it from the margin on accepted bundles ([payment flow](channel-economics.md#2-payment-to-the-bundle-submitter)). The Service keeps no endpoint reputation. The administrator MAY evict misbehaving endpoints ([§3.2](#32-registration-and-admission)), and the transaction fee deters the submission of stale manifest bundles. Curation places full trust in the administrator, including trust that it will not empty the manifest. Endpoints SHOULD randomize peer selection ([§5.3](#53-peer-selection)).
 
 ### 6.4 Reentrancy and external calls
 
@@ -314,6 +298,16 @@ On EVM ledgers, peers prove the Service's state by its [proven storage layout](.
 
 Per-connector quotas keep one connector from filling a channel's queue ([queue quotas](channel-economics.md#3-queue-quotas)).
 
+### 6.8 Transport and sync hygiene
+
+- The connection and TLS session of [endpoint sync](../protocol/endpoint-sync/README.md) MAY persist across cycles; each cycle uses a new stream.
+- An endpoint SHOULD serve TLS whenever it has a certificate. A client SHOULD verify the server against the manifest certificate or a configured pin ([transport](../protocol/endpoint-sync/README.md#2-transport)).
+- An endpoint MAY end a stream, and MAY stop or reduce syncing with a peer endpoint, when the peer:
+  - sends messages that break the [rules](../protocol/endpoint-sync/README.md#32-rules) or exceed the gRPC message size limit;
+  - sends bundles that its ledger rejects; or
+  - keeps a stream open without completing the [sequence](../protocol/endpoint-sync/README.md#33-sequence).
+- A ledger's rejection of a bundle MAY count toward such local thresholds. There is no cross-ledger misbehavior reporting.
+
 ## 7. Recovery scenarios
 
 | # | Scenario | Recovery | Result |
@@ -325,5 +319,3 @@ Per-connector quotas keep one connector from filling a channel's queue ([queue q
 | R5 | Peer's queue state corrupted | The channel pauses, and resumes when the peer's replies are ordered again ([pause and resume](../protocol/channel-state-transitions.md#6-pause-and-resume)). The administrator can close it; it drains once the peer is fixed | Works once the peer recovers |
 | R6 | Partition with unchanged endpoints, or peer ledger down | Messages queue up to `max_queue_depth`, then `sendMessage` is rejected. Sync resumes when the peer is reachable; message ids and running hashes keep delivery exact | Works |
 | R7 | A DRAINED side receives no bundle with status CLOSED | The administrator closes the channel ([§2.5](#25-closing-a-channel)) | Closed |
-
-Recovery R1 depends on every bundle carrying queue metadata ([bundle content](../protocol/bundle.md#1-bundle-content)).

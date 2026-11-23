@@ -14,6 +14,8 @@ The cost of executing a message falls on the destination ledger, where the bundl
 charge := execution_cost × (1 + endpointMarginPercent / 100)
 ```
 
+A ledger MAY apply the margin to part of `execution_cost` only, as Hiero does below.
+
 The Service SHOULD pay the charge to the bundle submitter ([§2](#2-payment-to-the-bundle-submitter)).
 
 - The margin covers the submitter's overhead and gives it an incentive to submit.
@@ -26,15 +28,17 @@ Ledgers differ in how `execution_cost` is measured.
 
 **On Hiero:**
 
-- `execution_cost` is the flat `messageExecutionCost`, so the charge is `messageExecutionCost × (1 + endpointMarginPercent / 100)`.
-- The charge is collected before dispatch, and unused execution is not refunded.
-- The connector is underfunded when its contract's balance is below the charge.
-- The application call receives the local `max_gas_per_message`.
-- Delivering a REPLY to the source application is not charged.
+- `execution_cost` is the flat `messageExecutionCost` plus the cost of the gas the application call uses. The worst-case charge is `messageExecutionCost × (1 + endpointMarginPercent / 100)` plus the cost of the call's gas limit; the margin applies to the flat part only.
+- The worst-case charge is collected before dispatch, and the cost of unused gas is refunded to the connector afterwards.
+- The connector is underfunded when its contract's balance is below the worst-case charge.
+- The application call's gas limit is defined in [Hiero §6.3](../ledgers/hiero/README.md#63-application-callbacks). A limit of 0 gives APPLICATION_ERROR, with no charge.
+- Delivering a REPLY to the source application is charged to the source connector, for the callback's gas. The callback is skipped when the connector cannot prepay that gas.
 
 **On EVM ledgers:**
 
+- Execution charging applies only when `messageExecutionCost` is non-zero and the transaction's gas price is non-zero. Otherwise execution is free, with no balance check, charge or slash.
 - `execution_cost` is the gas the application call used, times the transaction's gas price, so the charge is `gasUsed × gasprice × (1 + endpointMarginPercent / 100)`. It is collected after dispatch.
+- Charges are paid in the Service's fee asset: the native currency, or an ERC-20 token fixed when the Service is deployed. A charge in an ERC-20 token is the gas cost, counted in 18-decimal units, scaled to the token's decimals.
 - The gas forwarded to the application is the lower of the local `max_gas_per_message` and the gas the connector's balance can pay for at that price, including the margin. If that is zero, the connector is underfunded.
 - If the charge fails after dispatch, the connector is slashed, and the REPLY keeps the status of the application call.
 - Delivering a REPLY to a source application contract is charged to the source connector by the same formula, for the gas the callback used. A failed REPLY charge is not slashed, and the submitter absorbs it.
@@ -45,7 +49,7 @@ The **bundle submitter** is the account that submitted the `submitBundle` transa
 
 If a transfer to the submitter fails, the Service MAY pay the [administrator](clpr-service.md#21-administrator) instead.
 
-- On Hiero, the submitter is normally the node that received the bundle ([who submits](clpr-service.md#51-who-submits)). The Service transfers the charge directly from the connector contract's account to the submitter.
+- On Hiero, the submitter is the payer of the `submitBundle` transaction, normally the node that received the bundle ([who submits](clpr-service.md#51-who-submits)). The Service transfers the charge directly from the connector contract's account to the submitter, and pays slash proceeds from the escrow account, capped at its balance ([proceeds](stakes-and-bonds.md#23-proceeds)). There is no administrator fallback.
 - On EVM ledgers, the steps are:
   1. The Service calls the connector contract's `payForExecution(amount)` with a gas limit of `connectorPaymentGasLimit`. The connector interface is in the [EVM family](../ledgers/evm/README.md#3-application-and-connector-interfaces).
   2. The payment succeeds only if the Service's balance rises by exactly `amount`.
@@ -71,4 +75,4 @@ quota := floor(max_queue_depth × connectorQueueQuotaPct / 100)     // local max
 The quota count is kept per connector ([connector record and counters](clpr-service.md#13-connector-record-and-counters)):
 
 - On Hiero, it is the number of the connector's DATA messages above the stored acknowledgement. A quota of 0 disables the check.
-- On EVM ledgers, it counts the connector's DATA messages from enqueue until their REPLY arrives or they are redacted.
+- On EVM ledgers, it counts the connector's DATA messages from enqueue until their REPLY arrives.

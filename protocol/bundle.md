@@ -10,7 +10,7 @@ The CLPR Service treats a bundle as opaque bytes. The channel's verifier contrac
 
 | Item | Type | Meaning |
 |---|---|---|
-| `metadata` | `QueueMetadata` | The source's proven queue state (Section 2). Every bundle MUST carry it. |
+| `metadata` | `optional QueueMetadata` | The source's proven queue state (Section 2). A bundle that carries messages MUST carry it. Otherwise it MAY be absent. |
 | `messages` | `bytes[]` | The payload bytes ([payload encoding](messaging.md#3-payload-encoding)) of a contiguous run of the source's outbound queue, in id order. Can be empty. |
 | `last_message_id` | `uint64` | The id of the last message in `messages`, taken from its proven queue entry. 0 when `messages` is empty. |
 | `last_message_running_hash` | `bytes32` | That entry's `running_hash_after_processing`. Not used when `messages` is empty. |
@@ -20,7 +20,7 @@ The CLPR Service treats a bundle as opaque bytes. The channel's verifier contrac
 
 The messages carry the ids `last_message_id − len(messages) + 1` to `last_message_id`.
 
-A bundle with no messages is valid. It can carry only an acknowledgement, a status change, a manifest or a trust anchor change, as long as it makes progress ([progress](channel-state-transitions.md#3-progress)).
+A bundle with no messages is valid. It can carry any combination of queue metadata, a manifest and a trust anchor change, as long as it makes progress ([progress](channel-state-transitions.md#3-progress)).
 
 ## 2. Queue metadata
 
@@ -37,7 +37,7 @@ A bundle with no messages is valid. It can carry only an acknowledgement, a stat
 
 Informational fields MUST NOT cause a change of state at the destination. They inform the destination's endpoints.
 
-The id of the trust anchor that the source holds for the destination is informational. It has no field in the queue metadata above, but the wire encoding keeps it as field 6 of `ClprQueueMetadata` ([schema](schema/clpr_bundle_content.proto)). Endpoints report it, unproven, in their sync requests ([exchange](endpoint-sync/README.md#31-messages)). A proof scheme MAY prove it. A verifier need not return it, and like the other informational fields it does not change state at the destination.
+The id of the trust anchor that the source holds for the destination is informational. It has no field in the queue metadata above. Endpoints report it, unproven, in their sync requests ([exchange](endpoint-sync/README.md#31-messages)). A proof scheme MAY prove it. A verifier need not return it, and like the other informational fields it does not change state at the destination.
 
 The queue counters these fields report are defined in [messaging](messaging.md#2-message-identifiers-and-queue).
 
@@ -56,9 +56,9 @@ The run is bounded by the destination's `max_messages_per_bundle` and `max_sync_
 
 ## 4. Proof requirements
 
-A proof scheme defines how the abstract bundle content is proven ([CLIP-0001 §3.3](../clips/clip-0001.md#33-ledger-specifications)). Every proof scheme MUST prove, under the trust anchor the destination stores for the channel:
+A proof scheme defines how the abstract bundle content is proven ([ledgers](../ledgers/README.md)). Every proof scheme MUST prove, under the trust anchor the destination stores for the channel:
 
-1. **Channel state:** the source channel state from which `metadata` and the source's `acked_message_id` are taken, for the channel `ctx.channel_id` of the [channel context](channel-setup.md#3-channel-context), and for the CLPR Service `ctx.service_address` where the source ledger can host more than one CLPR Service.
+1. **Channel state:** when `metadata` is present, the source channel state from which `metadata` and the source's `acked_message_id` are taken, for the channel `ctx.channel_id` of the [channel context](channel-setup.md#3-channel-context), and for the CLPR Service `ctx.service_address` where the source ledger can host more than one CLPR Service.
 2. **Last message:** when `messages` is non-empty, the queue entry of `last_message_id` on the same channel: its id and its `running_hash_after_processing`.
 3. **Endpoint manifest:** when present, the source CLPR Service's endpoint manifest, bound to `ctx.service_address` ([manifest proofs](endpoint-manifest.md#5-manifest-proofs)).
 4. **Trust anchor change:** when the bundle makes a trust anchor change, a commitment to the new trust anchor, proven under the current trust anchor ([trust anchor changes](verifier-interface.md#4-trust-anchor-changes)).

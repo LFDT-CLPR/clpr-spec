@@ -2,7 +2,7 @@
 
 > **Category:** Blueprint (SHOULD)
 
-This document describes the recommended design of the stake that a connector locks against misbehavior, and the slashing of that stake. Endpoints are not bonded ([§3](#3-endpoints)). Stakes are local to each ledger and never cross the wire. Parameter defaults are listed in the [Service parameters](clpr-service.md#42-service-parameters).
+This document describes the recommended design of the stake that a connector locks against misbehavior, and the slashing of that stake. Stakes are local to each ledger and never cross the wire. Parameter defaults are listed in the [Service parameters](clpr-service.md#42-service-parameters).
 
 ## 1. Connector stake
 
@@ -67,4 +67,4 @@ On Hiero, the penalty is paid from the escrow account and capped at that account
 
 ## 3. Endpoints
 
-Endpoints are neither bonded nor slashed. Stakes and slashing apply only to connectors. A misbehaving endpoint is removed from the manifest: by the administrator on a ledger with endpoint registration ([registration and admission](clpr-service.md#32-registration-and-admission)), or through the ledger's governance of its roster on a ledger whose manifest is derived from the node roster ([roster-derived manifest](clpr-service.md#33-roster-derived-manifest)).
+Endpoints are not slashed. Stakes and slashing apply only to connectors. A misbehaving endpoint is removed from the manifest: by the administrator on a ledger with endpoint registration ([registration and admission](clpr-service.md#32-registration-and-admission)), or through the ledger's governance of its roster on a ledger whose manifest is derived from the node roster ([roster-derived manifest](clpr-service.md#33-roster-derived-manifest)).

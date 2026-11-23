@@ -14,7 +14,8 @@ message ClprQueueMetadata {
   bytes received_running_hash = 4;
   ClprChannelStatus status = 5;
 
-  // Trust anchor id: see protocol/bundle.md §2.
+  // Informational: the id of the trust anchor the sender holds for the
+  // destination. Unproven unless a proof scheme proves it. See protocol/bundle.md §2.
   bytes trust_anchor_id = 6;
 
   // Informational. See protocol/bundle.md §2.

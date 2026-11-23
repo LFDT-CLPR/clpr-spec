@@ -2,7 +2,7 @@
 
 > **Category:** Protocol · **Version:** v0.2 · **Last changed:** v0.2
 
-The **endpoint manifest** is the on-ledger list of the CLPR Endpoints that serve a CLPR Service. Each CLPR Service maintains its own manifest, and each channel holds a proven copy of the peer's manifest. Endpoints find each other only through these manifests. Encodings are in [`schema/`](schema/README.md).
+The **endpoint manifest** is the on-ledger list of the CLPR Endpoints that serve a CLPR Service. Each CLPR Service maintains its own manifest, and each channel holds a proven copy of the peer's manifest. Endpoints find each other only through these manifests. Encodings are in [`ledgers/schema/`](../ledgers/schema/README.md).
 
 ## 1. Endpoint
 
@@ -11,7 +11,7 @@ The **endpoint manifest** is the on-ledger list of the CLPR Endpoints that serve
 | Field | Type | Meaning and constraints |
 |---|---|---|
 | `service_endpoint` | `optional ServiceEndpoint` | Where the endpoint accepts [endpoint sync](endpoint-sync/README.md) connections. An endpoint whose `service_endpoint` is absent, or has an empty `ip_address`, only initiates syncs, for example on a private network. |
-| `tls_certificate` | `optional bytes` | The endpoint's TLS CA certificate: a DER-encoded X.509 certificate with an ECDSA P-384 key; empty when absent. Peers use it to authenticate the endpoint in mutual TLS; an empty value means the endpoint serves plaintext ([transport](endpoint-sync/README.md#2-transport)). An empty value is always accepted. A CLPR Service MAY validate a non-empty value when an endpoint is registered (for example [EVM](../ledgers/evm/README.md#6-endpoint-certificates)). |
+| `tls_certificate` | `optional bytes` | The certificate the endpoint presents when it serves endpoint sync over TLS: a DER-encoded X.509 certificate; empty when absent. A non-empty value means the endpoint serves TLS, and an empty value means it serves plaintext. Peers MAY use it to verify the endpoint ([transport](endpoint-sync/README.md#2-transport)). An empty value is always accepted. A CLPR Service MAY validate a non-empty value when an endpoint is registered, as its Ledger Specifications define ([ledgers](../ledgers/README.md)). |
 | `account_id` | `optional bytes` | The ledger-specific account identifier of the endpoint's operator; empty when absent. It is not used by the network. |
 
 `ServiceEndpoint`:
@@ -35,7 +35,7 @@ A valid manifest has `version` ≥ 1. The value `version` = 0 with no endpoints 
 
 ## 3. Local manifest
 
-Each CLPR Service maintains one **local manifest**: the `EndpointManifest` of its own endpoints. It is Service state, separate from the ledger configuration (the configuration's deprecated `endpoints` field is not the manifest).
+Each CLPR Service maintains one **local manifest**: the `EndpointManifest` of its own endpoints. It is Service state, separate from the ledger configuration.
 
 - The local manifest's `version` increases as defined in Section 2 whenever its endpoint set changes.
 - The number of endpoints MUST NOT exceed the ledger's `max_local_endpoints` when that is non-zero ([throttles](ledger-configuration.md#3-throttles)).
@@ -51,7 +51,7 @@ Each channel holds a copy of the peer CLPR Service's manifest, the **peer manife
 
 **Update.** When a bundle's verified content includes a manifest whose `version` is greater than the channel's `endpoint_manifest_version`, the CLPR Service MUST replace the peer manifest with it as a whole and set `endpoint_manifest_version` to its version. A manifest whose version is not greater is ignored; it does not cause the bundle to be rejected. The point in bundle processing at which this happens is defined in [bundle processing](channel-state-transitions.md#2-bundle-processing).
 
-**Truncation.** When a manifest is installed or updated and its endpoint list is longer than the local `max_peer_endpoints` (when non-zero), the CLPR Service keeps only the first `max_peer_endpoints` endpoints, in manifest order. The stored version is the manifest's version.
+**Truncation.** When a manifest is installed or updated and its endpoint list is longer than the local `max_peer_endpoints` (when non-zero), the CLPR Service keeps only the first `max_peer_endpoints` endpoints, in manifest order. A CLPR Service MAY also bound the stored size of a peer manifest; it then keeps the longest prefix of the endpoint list, in manifest order, whose encoding fits. The stored version is the manifest's version.
 
 **Empty manifest.** A peer manifest with no endpoints is valid, and channel setup MUST NOT fail only because the peer's manifest is empty. While a channel's peer manifest has no endpoints, its local endpoints cannot initiate syncs and depend on the peer's endpoints to initiate them. If neither side lists an endpoint, the channel makes progress only when someone submits bundles directly; bundle submission is open to any caller.
 

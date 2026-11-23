@@ -19,7 +19,7 @@ A side that receives a bundle submits it to the CLPR Service on its own ledger (
 
 ## 2. Transport
 
-Every CLPR Endpoint that advertises a network address in its [endpoint](../endpoint-manifest.md#1-endpoint) entry MUST serve the method `sync` of the gRPC service `ClprEndpointService` ([§7](#7-schema)), at the full method name below, on that address and port. An endpoint that advertises no address only initiates. This service is separate from the ledger's transaction API.
+Every CLPR Endpoint that advertises a network address in its [endpoint](../endpoint-manifest.md#1-endpoint) entry MUST serve the method `sync` of the gRPC service `ClprEndpointService` ([§7](#7-schema)), at the full method name below, on that address and port. An endpoint that advertises no address only initiates. This service is separate from the ledger's transaction API, but MAY be served on the same port.
 
 | Item | Value |
 |---|---|
@@ -32,14 +32,15 @@ Every CLPR Endpoint that advertises a network address in its [endpoint](../endpo
 - An endpoint MAY expose other RPCs, on the same port or on other ports. They are not part of the protocol.
 - An endpoint MUST configure its gRPC maximum message size so that it accepts a `ClprSyncPayload` whose `bundle_payload` is as large as its own ledger's `max_sync_bytes` ([throttles](../ledger-configuration.md#3-throttles)). The limit therefore exceeds `max_sync_bytes` by the size of the rest of the message: `channel_id`, a `BundleRequest`, and the protobuf field overhead.
 
-**Transport security.** Endpoints authenticate each other with mutual TLS, anchored in the `tls_certificate` of their [endpoint](../endpoint-manifest.md#1-endpoint) entries:
+**Transport security.** The `tls_certificate` of an endpoint's [endpoint](../endpoint-manifest.md#1-endpoint) entry determines its transport:
 
-- An endpoint's `tls_certificate` is its **CA certificate**: a DER-encoded X.509 certificate with an ECDSA P-384 key. In a handshake the endpoint presents a **leaf certificate** with an Ed25519 key, signed by that CA. The leaf MUST NOT be a CA certificate. An endpoint MAY replace its leaf at any time, for example at each start; only the CA is published.
-- An endpoint whose entry has a non-empty `tls_certificate` MUST serve `sync` over mutual TLS on its advertised address and port, and MUST require a client certificate. It accepts a client leaf only if the leaf is signed by the CA of an endpoint in a peer manifest of one of its channels ([peer manifest](../endpoint-manifest.md#4-peer-manifest)). Otherwise it refuses the connection.
-- A client connecting to such an endpoint MUST present its own leaf, and MUST accept the server only if the server's leaf is signed by the CA in that endpoint's `tls_certificate`.
-- Neither side checks the host name or IP address against a certificate. Either side MAY also check a leaf's validity period.
-- An endpoint whose entry has an empty `tls_certificate` serves `sync` in plaintext, and a client connects to it in plaintext. There is no fallback from TLS to plaintext. An endpoint with no CA cannot present a client certificate, so it can sync only with endpoints that also have none.
-- The transport authenticates the peer as an endpoint of a known peer manifest. It does not authenticate bundles: the integrity and authenticity of a bundle rest on its proof, and a `BundleRequest` is an unproven hint.
+- An endpoint whose entry has a non-empty `tls_certificate` MUST serve `sync` over TLS on its advertised address and port, presenting that certificate.
+- An endpoint whose entry has an empty `tls_certificate` serves `sync` in plaintext.
+- A client MUST connect over TLS to an endpoint whose `tls_certificate` is non-empty. It MUST NOT fall back to plaintext after a failed TLS handshake or certificate check with such an endpoint.
+- A client connects in plaintext to an endpoint whose `tls_certificate` is empty. It MAY first attempt TLS.
+- An endpoint MUST NOT require a client certificate.
+- A client MAY verify the server by equality with the advertised certificate, by a locally configured pin, or by a certificate authority it trusts. Neither side checks the host name or IP address against a certificate.
+- TLS provides confidentiality. It authenticates the server only when the client verifies the server's certificate. It does not authenticate bundles: the integrity and authenticity of a bundle rest on its proof, and a `BundleRequest` is an unproven hint.
 
 ## 3. Exchange
 
@@ -86,12 +87,14 @@ A `BundleRequest` is unproven. It only shapes the bundle that the sender builds,
 |---|---|---|---|
 | 1 | Initiator | `channel_id`, `bundle_request` | The initiator's request. |
 | 2 | Responder | `channel_id`, `bundle_request`, `bundle_response` if any | The responder's request, and the responder's bundle built for the request of step 1. |
-| 3 | Initiator | `channel_id`, `bundle_response` if any | The initiator's bundle built for the request of step 2. A terminal message if there is no bundle. |
+| 3 | Initiator | `channel_id`, `bundle_response` if any | The initiator's bundle built for the request of step 2. If there is no bundle, a terminal message, or the initiator half-closes the call without one. |
 | 4 | Responder | `channel_id` | A terminal message. The cycle is complete. |
 
 - If step 1 is a terminal message, the responder ends the stream without a reply.
-- After step 3 the initiator closes its sending direction. If step 3 is a terminal message, the responder MAY end the stream without sending step 4.
-- The underlying connection and TLS session MAY persist across cycles. Each cycle uses a new stream.
+- After step 3 the initiator half-closes the call: it ends its sending side and continues to receive.
+- If the initiator has no bundle for step 3, it MAY half-close the call without sending a terminal message. The responder treats the half-close as the end of step 3.
+- On receiving step 3 the responder sends step 4, without waiting for the half-close, and then MUST end the call. If step 3 is a terminal message, or the initiator half-closes without sending step 3, the responder MUST end the call and MAY do so without sending step 4.
+- Each cycle uses a new stream.
 
 Submission is not part of the exchange. The stream does not wait for, or report, the result of submitting a bundle. A sender learns that its bundle was accepted from the requestor's next `BundleRequest`.
 
@@ -124,7 +127,7 @@ When a trust anchor changes, and how its identifier is formed, is defined by eac
 
 ### 5.2 Endpoint manifest
 
-If a request's `current_endpoint_manifest_version` is lower than the version of the sender's local endpoint manifest, the sender MUST include a [manifest proof](../endpoint-manifest.md#5-manifest-proofs) in any bundle it sends in reply to that request. It MAY send a bundle for this purpose alone.
+If a request's `current_endpoint_manifest_version` is lower than the version of the sender's local endpoint manifest, the sender MUST include a [manifest proof](../endpoint-manifest.md#5-manifest-proofs) in any bundle it sends in reply to that request. It MAY send a bundle for this purpose alone. A transition bundle that its proof scheme defines as proving no ledger state cannot carry a manifest proof and is exempt; the obligation then applies to the next bundle the sender sends in reply to such a request.
 
 ### 5.3 Channel status
 
@@ -135,15 +138,7 @@ There is no close notification: an endpoint does not initiate a cycle to report 
 
 ## 6. Misbehavior
 
-Misbehavior detection and enforcement are strictly local. Each endpoint detects and responds to misbehavior that it observes. There is no cross-ledger misbehavior reporting.
-
-An endpoint MAY end a stream, and MAY stop or reduce syncing with a peer endpoint, when the peer:
-
-- sends messages that break [§3.2](#32-rules) or exceed the gRPC message size limit;
-- sends bundles that its ledger rejects; or
-- keeps a stream open without completing the sequence of [§3.3](#33-sequence).
-
-A ledger's rejection of a bundle MAY count toward such local thresholds.
+Misbehavior detection and enforcement are strictly local and are not part of the protocol. Each endpoint detects and responds to misbehavior that it observes; recommended practice is in the [Blueprint](../../blueprint/clpr-service.md#68-transport-and-sync-hygiene).
 
 ## 7. Schema
 

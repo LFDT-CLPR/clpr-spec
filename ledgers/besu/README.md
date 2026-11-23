@@ -31,9 +31,9 @@ A storage slot number and a storage word are 256-bit unsigned integers: `slot + 
 | 1 | Message queues: a mapping from channel id to a mapping from message id to the stored message | The last message's running hash ([§3.3](#33-message-running-hash)) |
 | 15 | Channels: a mapping from channel id to the channel record | Queue metadata ([§3.2](#32-channel-record)) |
 | 18 | Endpoint manifest commitment: `keccak256` of the encoded local endpoint manifest | Manifest proofs ([§3.5](#35-verifying-the-clpr-service-state)) |
-| 25 | Service address, as a Solidity `bytes` value | The protobuf qbft-epoch configuration proof layout ([OI-2](../../protocol/open-issues.md#oi-2-configuration-proof-format-for-the-qbft-epoch-scheme)) |
+| 25 | Service address, as a Solidity `bytes` value | The configuration proof form for the Hiero built-in verifier, when supplied ([qbft-header §9](proof-schemes/qbft-header.md#9-configuration-and-manifest-proofs), [qbft-contract §9](proof-schemes/qbft-contract.md#9-configuration-and-manifest-proofs)) |
 
-The manifest commitment is `keccak256(m)`, where `m` is the [protocol encoding](../../protocol/schema/README.md) of the CLPR Service's current local [endpoint manifest](../../protocol/endpoint-manifest.md#3-local-manifest), with default values omitted. The CLPR Service recomputes it whenever the manifest version or the service address changes.
+The manifest commitment is `keccak256(m)`, where `m` is the [protobuf encoding](../schema/README.md) of the CLPR Service's current local [endpoint manifest](../../protocol/endpoint-manifest.md#3-local-manifest), with default values omitted. The CLPR Service recomputes it whenever the manifest version or the service address changes.
 
 Slot 25 holds a 20-byte service address `a` in the short `bytes` layout: the word is `a × 2^96 + 0x28`, with `a` read as a big-endian integer and `0x28` twice the length.
 
@@ -73,7 +73,7 @@ All proofs are EIP-1186 Merkle-Patricia proofs, as returned by `eth_getProof`, e
 |---|---|
 | Account proof | An RLP list of byte strings: the trie nodes from the state root to the leaf for `keccak256(serviceAddress)`. The leaf value is the RLP list `[nonce, balance, storageRoot, codeHash]`. |
 | Storage proof | An RLP list of entries. Each entry is a two-item RLP list `[slot, nodes]`: `slot` is a byte string of at most 32 bytes holding the slot number big-endian (leading zeros MAY be omitted), and `nodes` is an RLP list of byte strings, the trie nodes from the storage root to the leaf for `keccak256(be(slot, 32))`. An entry carries no value: the value is read from the proof. |
-| Bundle content | A byte string holding the protobuf `ClprBundleContent` ([schema](../../protocol/schema/README.md)): field 1 is the queue metadata, field 2 (repeated) the message payloads in id order. A verifier reads only field 2 and ignores field 1. It MUST reject content that is not a well-formed protobuf encoding, and MAY reject content that holds other fields. |
+| Bundle content | A byte string holding the protobuf `ClprBundleContent` ([schema](schema/README.md)): field 1 is the queue metadata, field 2 (repeated) the message payloads in id order. A producer MUST set field 1 to the queue metadata of the proven state. Its field 6, the informational trust anchor id, MAY be set. A verifier takes its values only from field 2. It MAY reject content whose field 1 is absent, or whose proven fields differ from the proven queue metadata. It MUST reject content that is not a well-formed protobuf encoding, and MAY reject content that holds other fields. |
 | Manifest storage proof | A storage proof with one entry, for slot 18. |
 | Manifest preimage | A byte string holding the protobuf `ClprEndpointManifest` exactly as committed in slot 18. |
 
@@ -157,23 +157,47 @@ The queue metadata MUST come from the proven slots. A verifier MUST NOT use the 
 
 A message-less bundle with six entries is accepted; its sixth entry is ignored.
 
-The rejection conditions of this section are the `reject` statements of `StorageValue` and `VerifyServiceState`, and failure to decode the bundle content or the manifest preimage.
+Hiero's built-in verifier searches for the last message, when the storage proof has six entries, among the ids from `acked + count` up to, but not including, `min(m.next_message_id, acked + count + 512)`. It rejects a bundle whose last message lies beyond that window.
+
+The rejection conditions of this section are the `reject` statements of `StorageValue` and `VerifyServiceState`, failure to decode the bundle content or the manifest preimage, and, for Hiero's built-in verifier, the window above.
+
+### 3.6 Producing the state proofs
+
+Every Besu proof scheme proves the CLPR Service state at the block `H` that [bundle aggregation](bundle-aggregation.md) reads. In addition to the abstract bundle content, the endpoint collects:
+- an EIP-1186 proof, at `H`, of the CLPR Service account and of the channel's metadata slots, plus the last included message's running-hash slot as stated below;
+- when the bundle carries the endpoint manifest, a proof of the manifest commitment slot at `H`, and the committed manifest bytes.
+
+```
+storageSlots := [base + 1, base + 2, base + 4, base + 5, base + 16]
+if the bundle is partial then
+    append MessageHashSlot(channelId, id of the last message) to storageSlots
+(accountProof, storageProof) := eth_getProof(serviceAddress, storageSlots, H)
+content := serialize(ClprBundleContent { metadata = metadata, messages = messages })
+if the manifest is included then
+    manifestProof := eth_getProof(serviceAddress, [18], H)
+    manifestPreimage := the encoded manifest whose keccak256 is the value of slot 18 at H
+```
+
+- `base` and `MessageHashSlot` are defined in [§3.2](#32-channel-record) and [§3.3](#33-message-running-hash).
+- The producer MUST include the last message's slot when the bundle is [partial](../../protocol/bundle.md#3-partial-bundles). It MAY include it when the bundle carries messages up to the source's latest message; `VerifyServiceState` accepts both.
+- `metadata` is the queue metadata of `H`. It is written to field 1 of the content ([§3.4](#34-proof-encoding)).
+- When the peer is a Hiero ledger, the producer SHOULD keep the last message within the window of [§3.5](#35-verifying-the-clpr-service-state).
 
 ## 4. Proof schemes
 
 ### 4.1 Schemes
 
-| Scheme | Validator set source | Produced by | Verified by |
-|---|---|---|---|
-| [qbft-epoch](proof-schemes/qbft-epoch.md) | Epoch boundary headers | Besu CLPR Endpoint | EVM verifier contract; Hiero built-in verifier |
-| [qbft-header](proof-schemes/qbft-header.md) | Every block header | Besu CLPR Endpoint | EVM verifier contract |
-| [qbft-contract](proof-schemes/qbft-contract.md) | A validator contract's storage | Besu CLPR Endpoint | EVM verifier contract |
+| Scheme | Validator set source | Verified by |
+|---|---|---|
+| [qbft-epoch](proof-schemes/qbft-epoch.md) | Epoch boundary headers | EVM verifier contract |
+| [qbft-header](proof-schemes/qbft-header.md) | Every block header | EVM verifier contract; Hiero built-in verifier `0x…016f` |
+| [qbft-contract](proof-schemes/qbft-contract.md) | A validator contract's storage | EVM verifier contract; Hiero built-in verifier `0x…016f` |
 
 A Besu network uses the scheme that matches how it selects validators. A channel uses one scheme for its life. A Besu network that changes how it selects validators needs new channels.
 
 ### 4.2 QBFT headers and seals
 
-A block header is the RLP list of its fields in Besu's canonical order, including the fields added by later forks. Each scheme sets its own bounds on the number of header fields. Verifiers read three fields:
+A block header is the RLP list of its fields in Besu's canonical order, including the fields added by later forks. A header has at least 15 fields. Verifiers read three fields:
 
 | Index | Field |
 |---|---|
@@ -211,7 +235,7 @@ function RequireQuorum(header, V):            // V is a list of distinct address
     if the number of members of V in Signers(header) < Quorum(len(V)) then reject "quorum not reached"
 ```
 
-Signers outside `V` are not counted, and a signer that sealed more than once counts once. A verifier MAY stop recovering seals once every count it needs is reached; a seal it has not examined does not cause rejection. The seal hash contains no chain id: the validator keys identify the chain.
+Signers outside `V` are not counted, and a signer that sealed more than once counts once. A verifier MAY instead reject a header that carries a seal from a signer outside `V`, a second seal from one signer, or more seals than `V` has members. A producer MUST supply headers exactly as they are sealed on the ledger. A verifier MAY stop recovering seals once every count it needs is reached; a seal it has not examined does not cause rejection. The seal hash contains no chain id: the validator keys identify the chain.
 
 ### 4.3 Configuration-time manifest proof
 
@@ -219,7 +243,7 @@ The `endpointManifestProofBytes` argument of [verifyConfig](../evm/verifier-api.
 
 | Index | Item |
 |---|---|
-| 0 | A block header, within the scheme's header field bounds |
+| 0 | A block header of at least 15 fields |
 | 1 | Account proof of the service address under that header's `stateRoot` |
 | 2 | Manifest storage proof: one entry, for slot 18 |
 | 3 | Manifest preimage |

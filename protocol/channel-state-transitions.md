@@ -47,7 +47,7 @@ n := len(msgs)
 if n > T.max_messages_per_bundle then reject "too many messages"
 for each p in msgs
     m := decode MessagePayload(p)
-    if m is a DATA message and len(m.message_data) > T.max_message_payload_bytes then
+    if m is a DATA message and len(p) > T.max_message_payload_bytes then
         reject "payload too large"
 
 // Step 4. Progress
@@ -123,13 +123,14 @@ Notes on the steps:
 
 - **Step 1.** A PENDING channel has no record, so its bundles are rejected as for an unknown channel.
 - **Step 2.** The verifier is invoked as defined in [verifier interface](verifier-interface.md#3-verifybundle). The trust anchor id rule is [verifier interface §4](verifier-interface.md#4-trust-anchor-changes).
-- **Step 3.** The count includes messages the channel has already received. The payload limit applies only to the `message_data` of DATA messages.
+- **Absent metadata.** When `md` is absent, which happens only when `n = 0`, the CLPR Service applies Step 4, where only criteria 2 and 3 can hold, and Step 5. It skips Steps 6 to 14: the bundle changes no acknowledgement, status or message id.
+- **Step 3.** The count includes messages the channel has already received. The payload limit applies only to the payload bytes of DATA messages.
 - **Step 5.** The manifest update is defined in [peer manifest](endpoint-manifest.md#4-peer-manifest). The new manifest and the new trust anchor take effect before any message of the bundle is processed, so every message is attributed to the authority that proved it.
 - **Step 6.** A bundle can start with messages the channel has already received; they are skipped by every later step. A bundle cannot skip a message: Step 6 rejects a gap.
-- **Step 7.** The running hash is defined in [messaging §4](messaging.md#4-running-hash); `p` is a message's payload bytes. For a REDACTED message, see [messaging §10](messaging.md#10-redaction-deprecated). When every message is skipped, `h` is the stored `received_running_hash`, and Step 7 rejects the bundle unless it equals `last_hash`.
+- **Step 7.** The running hash is defined in [messaging §4](messaging.md#4-running-hash); `p` is a message's payload bytes. When every message is skipped, `h` is the stored `received_running_hash`, and Step 7 rejects the bundle unless it equals `last_hash`.
 - **Step 8.** An acknowledgement that moves backwards, or that acknowledges a message that was never sent, is rejected.
 - **Step 9.** Response ordering is defined in [messaging §8](messaging.md#8-response-ordering). It is checked over all of `new` before any message is dispatched. The effects of a violation are defined in Section 6.
-- **Step 10.** The acknowledgement rule is [messaging §9](messaging.md#9-acknowledgement).
+- **Step 10.** The acknowledgement rule is [messaging §9](messaging.md#9-acknowledgement). A CLPR Service that stores an answered acknowledgement applies that value here and in Steps 4 and 14.
 - **Step 12.** The rules for when a ConfigUpdate is due and when it is enqueued are in [configuration propagation](ledger-configuration.md#52-sending). It is enqueued before any message that the dispatch enqueues. A channel that the peer's status moves to CLOSING in this bundle still receives it.
 - **Step 14.** The checks run in order, so one bundle can apply several transitions. A CLPR Service MAY instead apply the first transition, ACTIVE to CLOSING, after Step 12 and before Step 13. The bundle's messages are dispatched in either case.
 
@@ -140,7 +141,6 @@ Notes on the steps:
 | CONTROL | Apply it as defined in [configuration propagation](ledger-configuration.md#53-receiving). Reject the bundle if that check fails, or if the control message type is not set or is unknown ([message types](messaging.md#1-message-types)). No REPLY. |
 | DATA | Deliver it ([delivery](messaging.md#6-delivery-to-the-application)). Enqueue one REPLY with `message_id` set to the DATA message's id and the outcome as `status`. |
 | REPLY | Deliver it to the sender of the answered DATA message ([delivery](messaging.md#6-delivery-to-the-application)) and delete that DATA message from the outbound queue. The CLPR Service applies its charging and slashing policy ([replies](messaging.md#7-replies)). |
-| REDACTED | Enqueue one REPLY with status REDACTED and empty `message_reply_data` ([redaction](messaging.md#10-redaction-deprecated)). |
 
 A failure of a connector or an application affects only the REPLY of that message; the other messages are processed normally. A payload that fails [strict decoding](conventions.md#3-abstract-data-structures) rejects the whole bundle.
 
@@ -153,7 +153,7 @@ A bundle **makes progress** if at least one of the following criteria holds. The
 | 1 | New messages | `n > 0` and `last_id > C.received_message_id` |
 | 2 | [Trust anchor change](verifier-interface.md#4-trust-anchor-changes) | `new_anchor` is non-empty and `new_anchor_id ≠ C.trust_anchor_id` |
 | 3 | Manifest update | `new_manifest` is present and `new_manifest.version > C.endpoint_manifest_version` |
-| 4 | Acknowledgement | `md.received_message_id > C.acked_message_id` |
+| 4 | Acknowledgement | The acknowledgement the CLPR Service would store ([messaging §9](messaging.md#9-acknowledgement)) is greater than `C.acked_message_id`: by default, `md.received_message_id > C.acked_message_id` |
 | 5a | Peer closing | `C.status` is ACTIVE or PAUSED, and `md.status` is CLOSING, DRAINED or CLOSED |
 | 5b | Drain | `C.status = CLOSING`, and every DATA message in the outbound queue is answered by a REPLY among the bundle's new messages |
 | 5c | Close | `C.status = DRAINED`; `md.status` is DRAINED or CLOSED; `max(C.acked_message_id, md.received_message_id) ≥ C.next_message_id − 1`; and `C.received_message_id ≥ md.next_message_id − 1` |
@@ -170,10 +170,10 @@ A bundle for a CLOSED channel is rejected by Step 1, not for lack of progress. C
 | ACTIVE | PAUSED | Bundle, Step 9 | A response ordering violation. |
 | PAUSED | ACTIVE | Bundle, Step 11 | A bundle accepted without a response ordering violation. |
 | ACTIVE | CLOSING | Bundle, Step 14 | `md.status` is CLOSING, DRAINED or CLOSED. |
-| ACTIVE, PAUSED | CLOSING | Administration | Close ([Blueprint](../blueprint/clpr-service.md#2-administration)). The channel continues to DRAINED in the same step if its outbound queue holds no DATA message. |
+| ACTIVE, PAUSED | CLOSING | Administration | Close (Section 5). The channel continues to DRAINED in the same step if its outbound queue holds no DATA message. |
 | CLOSING | DRAINED | Bundle, Step 14 | The outbound queue holds no DATA message. |
 | DRAINED | CLOSED | Bundle, Step 14 | `md.status` is DRAINED or CLOSED, and `C.acked_message_id ≥ C.next_message_id − 1`, and `C.received_message_id ≥ md.next_message_id − 1`. |
-| DRAINED | CLOSED | Administration | Recovery close ([Blueprint](../blueprint/clpr-service.md#2-administration)). |
+| DRAINED | CLOSED | Administration | Recovery close (Section 5): `C.acked_message_id ≥ C.next_message_id − 1`. |
 
 No other transition is permitted. A bundle reaches CLOSING from PAUSED by first resuming to ACTIVE. Administrative transitions are local to one ledger; the peer observes their result through `md.status`.
 
@@ -193,7 +193,9 @@ Condition 3 is needed because a bundle can end before the peer's latest message 
 
 **CLOSED.** Terminal. Every bundle and every `sendMessage` call is rejected. CLPR Endpoints no longer start sync cycles for the channel. As responders they MAY still send a bundle that reports CLOSED, which lets a DRAINED peer reach CLOSED ([rules](endpoint-sync/README.md#32-rules)).
 
-There is no close notification. A bundle whose `md.status` is CLOSED is processed like any other: it moves an ACTIVE or PAUSED side to CLOSING, and a DRAINED side to CLOSED when the conditions above hold. If no such bundle reaches a DRAINED side, the recovery path is administrative ([Blueprint](../blueprint/clpr-service.md#25-closing-a-channel)).
+There is no close notification. A bundle whose `md.status` is CLOSED is processed like any other: it moves an ACTIVE or PAUSED side to CLOSING, and a DRAINED side to CLOSED when the conditions above hold. If no such bundle reaches a DRAINED side, the recovery path is administrative.
+
+**Administrative close.** The CLPR Service administration MAY close an ACTIVE or PAUSED channel. The channel moves to CLOSING, and on to DRAINED in the same step if its outbound queue holds no DATA message. The administration MAY also close a DRAINED channel: the **recovery close**. The recovery close MUST require `C.acked_message_id ≥ C.next_message_id − 1`, so that no message of this side is abandoned. Who may close a channel is a deployment choice ([Blueprint](../blueprint/clpr-service.md#25-closing-a-channel)).
 
 ## 6. Pause and resume
 
@@ -208,7 +210,7 @@ When a bundle contains a response ordering violation (Step 9):
 
 While PAUSED, applications cannot send, and queued outbound messages continue to sync to the peer. A bundle with a violation is processed only up to Step 9. The first bundle accepted without a violation returns the channel to ACTIVE (Step 11) and is then processed normally. This requires the peer to correct its outbound queue.
 
-The administrator can close a PAUSED channel ([Blueprint](../blueprint/clpr-service.md#25-closing-a-channel)). It then becomes CLOSING, and it cannot drain until the peer's REPLY messages arrive in order. DATA messages on a channel that never drains remain without a REPLY ([OI-3](open-issues.md#oi-3-messages-left-without-replies-when-a-channel-cannot-drain)).
+The administrator can close a PAUSED channel (Section 5). It then becomes CLOSING, and it cannot drain until the peer's REPLY messages arrive in order. DATA messages on a channel that never drains remain without a REPLY ([OI-3](open-issues.md#oi-3-messages-left-without-replies-when-a-channel-cannot-drain)).
 
 ## History
 

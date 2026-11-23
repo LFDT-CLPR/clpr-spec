@@ -10,7 +10,7 @@ This proof scheme proves Besu CLPR Service state under QBFT seals, and follows v
 |---|---|
 | Bundle producer | The Besu CLPR Endpoint |
 | Configuration and manifest proofs | The format is an open issue ([OI-2](../../../protocol/open-issues.md#oi-2-configuration-proof-format-for-the-qbft-epoch-scheme)) |
-| Verifiers | A verifier contract for EVM ledgers; Hiero's built-in verifier |
+| Verifiers | A verifier contract for EVM ledgers |
 
 ## 2. Trust model
 
@@ -34,8 +34,7 @@ A validator change between boundaries takes effect for the verifier only at the 
 In addition to the abstract bundle content, the endpoint collects:
 - the RLP header of `H`;
 - the epoch boundary headers after the peer's anchored epoch;
-- an EIP-1186 proof, at `H`, of the CLPR Service account and of the channel's metadata slots, plus the last included message's running-hash slot when the bundle carries messages;
-- when the bundle carries the endpoint manifest, a proof of the manifest commitment slot at `H`, and the committed manifest bytes.
+- the proofs of the CLPR Service state at `H` ([Besu §3.6](../README.md#36-producing-the-state-proofs)).
 
 ## 4. Wire layout
 
@@ -43,10 +42,10 @@ The bundle is an RLP list of 5 items, or 7 when it carries the endpoint manifest
 
 | Index | Item | Encoding |
 |---|---|---|
-| 0 | Header of `H` | RLP list of 15 to 23 header fields |
-| 1 | Epoch boundary headers | RLP list of headers, each an RLP list of 15 to 23 fields, in ascending block order; can be empty |
+| 0 | Header of `H` | RLP list of at least 15 header fields |
+| 1 | Epoch boundary headers | RLP list of headers, each an RLP list of at least 15 fields, in ascending block order; can be empty |
 | 2 | Account proof | [Proof encoding](../README.md#34-proof-encoding) |
-| 3 | Channel storage proof | 5 entries, or 6 when the bundle carries messages ([proof encoding](../README.md#34-proof-encoding)) |
+| 3 | Channel storage proof | 5 or 6 entries ([proof encoding](../README.md#34-proof-encoding), [state proofs](../README.md#36-producing-the-state-proofs)) |
 | 4 | Bundle content | [Proof encoding](../README.md#34-proof-encoding) |
 | 5 | Manifest storage proof | 7-item form only |
 | 6 | Manifest preimage | 7-item form only |
@@ -72,25 +71,17 @@ epochHeaders := []
 for j from 1 to k
     append headerAt((e_peer + j) × L) to epochHeaders
 
-storageSlots := [base + 1, base + 2, base + 4, base + 5, base + 16]
-if messages is not empty then
-    append MessageHashSlot(channelId, id of the last message) to storageSlots
-(accountProof, storageProof) := eth_getProof(serviceAddress, storageSlots, H)
-
-content := serialize(ClprBundleContent { metadata = metadata, messages = messages })
+(accountProof, storageProof, content, manifestProof, manifestPreimage) :=
+    the state proofs at H (Besu §3.6)
 items := [headerAt(H), epochHeaders, accountProof, storageProof, content]
 if the manifest is included then
-    manifestProof := eth_getProof(serviceAddress, [18], H)
-    manifestPreimage := the encoded manifest whose keccak256 is the value of slot 18 at H
     append manifestProof and manifestPreimage to items
 bundle := RLP(items)
 ```
 
-- `base` and `MessageHashSlot` are defined in the [proven storage layout](../README.md#3-proven-storage-layout).
 - `L` MUST equal the network's epoch length.
 - `maxHeaders` is a producer parameter, at least 1.
 - A verifier accepts messages with any number of boundary headers ([§6](#6-decode-and-verify-algorithm)). Which messages a producer includes when `k > 1` is set by [bundle aggregation §3](../bundle-aggregation.md#3-message-range-and-limits).
-- Field 1 of the bundle content SHOULD hold the queue metadata of `H`. Verifiers ignore it.
 
 **Catch-up limit.** When the peer is more than `maxHeaders` epochs behind, a bundle carries `maxHeaders` boundary headers and the peer catches up over several bundles. `H` stays the head block, so each such bundle is accepted only if a quorum of the set listed in its last boundary header sealed `H`. If the validator set changed in a later epoch beyond what that quorum tolerates, the bundle is rejected and the peer does not catch up. This limit is open issue [OI-6](../../../protocol/open-issues.md#oi-6-qbft-epoch-catch-up-across-a-validator-change).
 
@@ -110,14 +101,14 @@ function verifyBundle(proof, anchor, ctx):
     epochHeaders := decode RLPList(items[1])
     for i from 0 to len(epochHeaders) − 1
         h := epochHeaders[i]
-        if h does not have 15 to 23 fields then reject "header shape"
+        if h has fewer than 15 fields then reject "header shape"
         if number(h) ≠ (E + i + 1) × L then reject "not the next epoch boundary"
         RequireQuorum(h, V)
         V := the validators listed in h's extraData
     E' := E + len(epochHeaders)
 
     header := items[0]
-    if header does not have 15 to 23 fields then reject "header shape"
+    if header has fewer than 15 fields then reject "header shape"
     if floor(number(header) / L) < E' then reject "header before the anchored epoch"
     RequireQuorum(header, V)
 
@@ -162,7 +153,7 @@ A verifier MUST reject the bundle when:
 |---|
 | The trust anchor or the channel context is malformed, or the anchor's epoch length `L` is 0. |
 | The bundle is not an RLP list of 5 or 7 items. |
-| A header is not an RLP list of 15 to 23 fields, or its `extraData` is not the five-item QBFT list. |
+| A header is not an RLP list of at least 15 fields, or its `extraData` is not the five-item QBFT list. |
 | Epoch boundary header `i` is not at block `(E + i + 1) × L`. |
 | A header lists an empty validator set, has no seals, has a seal that is not 65 bytes or does not recover, or has fewer than `ceil(2 × n / 3)` distinct signers from the set it is checked against. |
 | The epoch of the header of `H` is before `E + k`. |
@@ -172,7 +163,7 @@ A verifier MUST reject the bundle when:
 
 ### 9.1 Configuration proof
 
-The layout of the qbft-epoch configuration proof is open issue **OI-2** ([Open issues](../../../protocol/open-issues.md#oi-2-configuration-proof-format-for-the-qbft-epoch-scheme)). This scheme does not define the layout. A verifier contract documents the layout it accepts.
+The layout of the qbft-epoch configuration proof is open issue **OI-2** ([Open issues](../../../protocol/open-issues.md#oi-2-configuration-proof-format-for-the-qbft-epoch-scheme)). This scheme does not define the layout.
 
 Whatever its layout, `verifyConfig` MUST return:
 - an initial trust anchor that determines `V`, `E`, `L` and `codeHash` as in [§7](#7-trust-anchor-changes), where `V` is the validator set listed in a sealed epoch boundary header of epoch `E`;
@@ -180,4 +171,4 @@ Whatever its layout, `verifyConfig` MUST return:
 
 ### 9.2 Manifest proof
 
-The manifest proof is the [configuration-time manifest proof](../README.md#43-configuration-time-manifest-proof), checked against the initial validator set `V`. Its header MUST have 15 to 23 fields.
+The manifest proof is the [configuration-time manifest proof](../README.md#43-configuration-time-manifest-proof), checked against the initial validator set `V`. Its header MUST have at least 15 fields.

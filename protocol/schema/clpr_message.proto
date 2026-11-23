@@ -17,10 +17,9 @@ message ClprMessagePayload {
 
     // CONTROL message.
     ClprControlMessage control = 3;
-
-    // Deprecated. REDACTED message. See protocol/messaging.md §10.
-    ClprRedactedMessage redacted_message = 4 [deprecated = true];
   }
+
+  reserved 4;
 }
 
 // DATA message: application content.
@@ -45,15 +44,7 @@ enum ClprMessageReplyStatus {
   CONNECTOR_NOT_FOUND = 2;
   CONNECTOR_UNDERFUNDED = 3;
 
-  // Deprecated. Answers a REDACTED message.
-  REDACTED = 4 [deprecated = true];
-
-  // Deprecated. Not produced; accepted on receipt.
-  CHANNEL_CLOSED = 5 [deprecated = true];
-
-  // Value 6 is reserved and never produced. Receipt of it is defined in
-  // protocol/messaging.md §7.
-  reserved 6;
+  reserved 4 to 6;
 }
 
 // REPLY message: the outcome of a DATA message.
@@ -79,33 +70,4 @@ message ClprControlMessage {
 // See protocol/ledger-configuration.md §5.
 message ClprConfigUpdate {
   ClprLedgerConfiguration configuration = 1;
-}
-
-// Deprecated. REDACTED message: replaces the payload of a redacted DATA message
-// in the sender's queue. See protocol/messaging.md §10.
-message ClprRedactedMessage {
-  option deprecated = true;
-
-  // SHA-256 of the serialized ClprMessagePayload that the redaction replaced.
-  bytes message_hash = 1;
-
-  // Sender of the original DATA message. Optional.
-  bytes sender = 2;
-}
-
-// Key of a queued message.
-message ClprMessageKey {
-  // 32-byte channel id.
-  bytes channel_id = 1;
-
-  // Message id within the channel. See protocol/messaging.md §2.
-  uint64 message_id = 2;
-}
-
-// Stored value of a queued message.
-message ClprMessageValue {
-  ClprMessagePayload payload = 1;
-
-  // Running hash after this message. See protocol/messaging.md §4.
-  bytes running_hash_after_processing = 2;
 }

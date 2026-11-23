@@ -1,0 +1,53 @@
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+
+package clpr.v0_2;
+
+import "ledgers/hiero/schema/state_proof.proto";
+
+// The envelope of every hinTS proof. Meaning and encoding rules:
+// ledgers/hiero/proof-schemes/hints/README.md §4.
+message HieroProof {
+  // MUST be 1.
+  uint32 format_version = 1;
+
+  // State form: a proof of ledger state and messages under a compact block signature.
+  StateProof state_proof = 2;
+
+  // The signing key transitions from the receiver's anchor key to the signer.
+  // Optional in the state form, required in the witness form.
+  HintsKeyProvenanceChain key_provenance = 3;
+
+  // Witness form: proof that the last key of the chain signed a block.
+  HieroBlockWitness block_witness = 4;
+}
+
+// A sequence of hinTS verification keys, each authorized by its predecessor.
+message HintsKeyProvenanceChain {
+  // The receiver's current 1096-byte verification key.
+  bytes initial_verification_key = 1;
+
+  // One to eight links, in adoption order.
+  repeated HintsKeyProvenanceLink links = 2;
+}
+
+// One key's authorization of its successor.
+message HintsKeyProvenanceLink {
+  // The successor's 1096-byte verification key.
+  bytes next_verification_key = 1;
+
+  // The predecessor's 1248-byte hinTS signature over next_verification_key.
+  bytes signature = 2;
+}
+
+// A block signed by the last key of a provenance chain.
+message HieroBlockWitness {
+  // The block timestamp: a canonical protobuf Timestamp, 1 to 16 bytes.
+  bytes timestamp = 1;
+
+  // The 32-byte right sibling of the timestamp leaf at the block root.
+  bytes sibling_hash = 2;
+
+  // The 1248-byte hinTS signature over the block root.
+  bytes signature = 3;
+}

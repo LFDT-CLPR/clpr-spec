@@ -26,7 +26,7 @@ Each connector record on a ledger holds at least:
 
 | Field | Meaning |
 |---|---|
-| `connector_contract` | The address of the connector's contract on this ledger, which implements the ledger's connector interface (for example [EVM](../ledgers/evm/README.md#3-application-and-connector-interfaces) and [Hiero](../ledgers/hiero/README.md#6-application-and-connector-interfaces)). |
+| `connector_contract` | The address of the connector's contract on this ledger, which implements the ledger's connector interface ([ledgers](../ledgers/README.md)). |
 | `admin` | The authority that can remove the connector (Section 5). |
 
 Other connector state, including its stake, is defined in the [Blueprint](../blueprint/stakes-and-bonds.md#1-connector-stake).
@@ -41,7 +41,7 @@ A connector is registered on each ledger in two phases, commit and reveal. The c
 ownership_commitment := keccak256(connector_id ‖ public_key)
 ```
 
-and calls `registerConnector(ownership_commitment)`. The CLPR Service records the commitment as pending.
+and calls `registerConnector` with the ownership commitment. A ledger MAY also require the channel id at commit, and MAY require that the channel exist; its Ledger Specifications state which of these it requires. The connector id and the key are first presented at `completeConnector`. The CLPR Service records the commitment as pending. Registering a commitment that is already pending or completed has no further effect, and a ledger MAY reject it.
 
 **Reveal.** The operator calls `completeConnector`:
 
@@ -55,7 +55,7 @@ and calls `registerConnector(ownership_commitment)`. The CLPR Service records th
 | `connector_contract` | `bytes` | The address of the connector contract on this ledger. |
 | `admin` | `bytes` | The connector's admin authority. |
 
-The message signed and the signature scheme are ledger-specific, and a ledger MAY require additional inputs, such as the stake. They are defined in each ledger's README under *Registration signatures* (for example [Hiero](../ledgers/hiero/README.md#5-registration-signatures) and [EVM](../ledgers/evm/README.md#5-registration-signatures)).
+The message signed and the signature scheme are ledger-specific, and a ledger MAY require additional inputs, such as the stake. They are defined in each ledger's Ledger Specifications, under *Registration signatures* ([ledgers](../ledgers/README.md)).
 
 The CLPR Service MUST reject the call if any of these holds:
 
@@ -69,7 +69,7 @@ The CLPR Service MUST reject the call if any of these holds:
 | `connector_contract` is not a contract deployed on this ledger. |
 | The stake requirement of the deployment is not met ([Blueprint](../blueprint/stakes-and-bonds.md#1-connector-stake)). |
 
-Otherwise it creates the connector record and the commitment is no longer pending.
+Otherwise it creates the connector record. The CLPR Service keeps the commitment, recorded as completed.
 
 ## 3. Connectors on both ledgers
 
@@ -91,11 +91,11 @@ An application that sends a DATA message names the channel and the connector ([e
 It returns one boolean, `authorized`.
 
 - The CLPR Service MUST reject the send unless the call returns true. A failed call is treated as a rejection.
-- The connector MAY apply any authorization logic, for example allow-lists or payment requirements. Whether it can change its own state during the call is ledger-specific; on Hiero it cannot ([Hiero](../ledgers/hiero/README.md#6-application-and-connector-interfaces)).
+- The connector MAY apply any authorization logic, for example allow-lists or payment requirements. Whether it can change its own state during the call is defined by the ledger's connector interface.
 - The call MUST NOT modify CLPR Service state.
 - By returning true, the connector commits that its counterpart on the destination ledger can pay for executing the message, and that it can itself cover the cost of handling the reply. This commitment is the basis for slashing ([Blueprint](../blueprint/stakes-and-bonds.md#2-slashing-and-bans)).
 
-The concrete function signature and call semantics are part of each ledger's connector interface (for example [EVM](../ledgers/evm/README.md#3-application-and-connector-interfaces) and [Hiero](../ledgers/hiero/README.md#6-application-and-connector-interfaces)). The other checks on a send, and their order, are defined in [enqueue](messaging.md#5-enqueue).
+The concrete function signature and call semantics are part of each ledger's connector interface, in its Ledger Specifications ([ledgers](../ledgers/README.md)). The other checks on a send, and their order, are defined in [enqueue](messaging.md#5-enqueue).
 
 ## 5. Removal
 

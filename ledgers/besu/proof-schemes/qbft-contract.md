@@ -9,7 +9,7 @@ This proof scheme proves Besu CLPR Service state under QBFT seals, and follows v
 | Role | Performed by |
 |---|---|
 | Bundle producer | The Besu CLPR Endpoint |
-| Verifiers | A verifier contract for EVM ledgers |
+| Verifiers | A verifier contract for EVM ledgers; Hiero's built-in verifier at `0x…016f` |
 
 ## 2. Trust model
 
@@ -26,7 +26,7 @@ In addition to the abstract bundle content, a producer collects:
 - the member list of the anchored set;
 - for every block after the anchored block and before `H` whose state changes the validator contract's array: its header and a proof of the array in its state;
 - a proof of the validator contract's array in the state of `H`;
-- the proofs of the CLPR Service state, as in [qbft-epoch §3](qbft-epoch.md#3-proof-material).
+- the proofs of the CLPR Service state at `H` ([Besu §3.6](../README.md#36-producing-the-state-proofs)).
 
 ## 4. Wire layout
 
@@ -34,7 +34,7 @@ The bundle is an RLP list of 5 items, or 7 when it carries the endpoint manifest
 
 | Index | Item | Encoding |
 |---|---|---|
-| 0 | Header of `H` | RLP list of 15 to 22 header fields |
+| 0 | Header of `H` | RLP list of at least 15 header fields |
 | 1 | Validator source | RLP list `[trustedSet, hops, contractProof]` |
 | 2 | Account proof | [Proof encoding](../README.md#34-proof-encoding) |
 | 3 | Channel storage proof | [Proof encoding](../README.md#34-proof-encoding) |
@@ -73,7 +73,7 @@ A := the anchored block number (the peer's trust anchor id)
 trustedSet := the members of the anchored set
 hops := []
 for b from A + 1 to number(H) − 1
-    if the state of b holds a different validator array than the state of b − 1 then
+    if the state of b holds a different validator set than the state of b − 1 then
         append [headerAt(b), ContractProof(b)] to hops
 contractProof := ContractProof(number(H))
 items := [headerAt(H), [trustedSet, hops, contractProof], accountProof, storageProof, content]
@@ -84,14 +84,18 @@ bundle := RLP(items)
 
 `validatorContract` and `arraySlot` are those of the anchor, and `N` is the array length at `b`.
 
-`number(H)` MUST be greater than `A`. The state proofs, content and manifest items are built as in [qbft-epoch §5](qbft-epoch.md#5-encoding-algorithm).
+`number(H)` MUST be greater than `A`. The state proofs, content and manifest items are built as in [Besu §3.6](../README.md#36-producing-the-state-proofs).
+
+The contract proof for the state of `H` MAY carry no storage entries when the validator contract's storage root at `H` equals its storage root at the last hop, or at `A` when there are no hops.
+
+A producer MAY leave out a block that changes the set, as long as every hop it carries proves a set different from the set before it and is sealed by a quorum of that set. A producer MAY bound the number of hops in one bundle. When more blocks after `A` change the validator set than that bound allows, `H` is the first such block after the last hop carried, and the peer catches up over several bundles.
 
 ## 6. Decode-and-verify algorithm
 
-The trust anchor determines `(T, codeHash, validatorContract, arraySlot, A, validatorCodeHash)` ([§7](#7-trust-anchor-changes)).
+The trust anchor determines `(T, codeHash, validatorContract, arraySlot, A, validatorCodeHash, R)` ([§7](#7-trust-anchor-changes)).
 
 ```
-function ResolveSet(proofBytes, stateRoot, validatorContract, arraySlot) → (set, codeHash):
+function ResolveSet(proofBytes, stateRoot, validatorContract, arraySlot) → (set, codeHash, storageRoot):
     p := decode RLPList(proofBytes)
     if len(p) ≠ 4 then reject "invalid proof shape"
     (c, accountProof, s, storageProof) := (p[0], p[1], p[2], p[3])
@@ -108,22 +112,22 @@ function ResolveSet(proofBytes, stateRoot, validatorContract, arraySlot) → (se
         if member = 0 then reject "zero validator"
         if member ∈ members then reject "duplicate validator"
         append member to members
-    return (members, codeHash)
+    return (members, codeHash, storageRoot)
 
-function PinnedSet(proofBytes, stateRoot, validatorContract, arraySlot, validatorCodeHash) → set:
-    (set, codeHash) := ResolveSet(proofBytes, stateRoot, validatorContract, arraySlot)
+function PinnedSet(proofBytes, stateRoot, validatorContract, arraySlot, validatorCodeHash) → (set, storageRoot):
+    (set, codeHash, storageRoot) := ResolveSet(proofBytes, stateRoot, validatorContract, arraySlot)
     if codeHash ≠ validatorCodeHash then reject "wrong validator code hash"
-    return set
+    return (set, storageRoot)
 
 function verifyBundle(proof, anchor, ctx):
-    (T, codeHash, validatorContract, arraySlot, A, validatorCodeHash) := anchor
+    (T, codeHash, validatorContract, arraySlot, A, validatorCodeHash, R) := anchor
     channelId := ctx[0:32]
     serviceAddress := ctx[32:len(ctx)]
     if len(proof) < 2 then reject "payload shape"
     items := decode RLPList(proof)
     if len(items) ≠ 5 and len(items) ≠ 7 then reject "payload shape"
     header := items[0]
-    if header does not have 15 to 22 fields then reject "header shape"
+    if header has fewer than 15 fields then reject "header shape"
 
     source := decode RLPList(items[1])
     if len(source) ≠ 3 then reject "validator source shape"
@@ -131,6 +135,7 @@ function verifyBundle(proof, anchor, ctx):
     if the distinct members of trustedSet ≠ T then reject "wrong trusted set"
 
     current := T
+    root := R
     last := A
     for each hop in hops
         hp := decode RLPList(hop)
@@ -139,11 +144,22 @@ function verifyBundle(proof, anchor, ctx):
         if hopHeader has fewer than 15 fields then reject "header shape"
         if number(hopHeader) ≤ last then reject "hops not ascending"
         RequireQuorum(hopHeader, current)
-        current := PinnedSet(hopProof, stateRoot(hopHeader), validatorContract, arraySlot, validatorCodeHash)
+        (next, root) := PinnedSet(hopProof, stateRoot(hopHeader), validatorContract, arraySlot,
+                                  validatorCodeHash)
+        if next = current then reject "hop does not change the set"
+        current := next
         last := number(hopHeader)
     if number(header) ≤ last then reject "header not after the walk"
     RequireQuorum(header, current)
-    next := PinnedSet(contractProof, stateRoot(header), validatorContract, arraySlot, validatorCodeHash)
+    if contractProof carries no storage entries then
+        (headRoot, headCodeHash) := the account of validatorContract, proven by contractProof
+                                    under stateRoot(header)
+        if headCodeHash ≠ validatorCodeHash then reject "wrong validator code hash"
+        if headRoot ≠ root then reject "validator array not proven"
+        next := current
+    else
+        (next, headRoot) := PinnedSet(contractProof, stateRoot(header), validatorContract, arraySlot,
+                                      validatorCodeHash)
 
     if len(items) = 7 then
         (manifestProof, manifestPreimage) := (items[5], items[6])
@@ -152,8 +168,9 @@ function verifyBundle(proof, anchor, ctx):
     (metadata, payloads, manifest) := VerifyServiceState(stateRoot(header), codeHash,
             items[2], items[3], items[4], manifestProof, manifestPreimage, channelId, serviceAddress)
 
-    if next ≠ T or len(hops) > 0 then
-        newAnchor := (next, codeHash, validatorContract, arraySlot, number(header), validatorCodeHash)
+    if next ≠ T or len(hops) > 0 or headRoot ≠ R then
+        newAnchor := (next, codeHash, validatorContract, arraySlot, number(header), validatorCodeHash,
+                      headRoot)
         newAnchorId := be(number(header), 8)
     else
         newAnchor := empty
@@ -163,9 +180,11 @@ function verifyBundle(proof, anchor, ctx):
 
 `StorageValue` and `VerifyServiceState` are defined in [Besu §3.5](../README.md#35-verifying-the-clpr-service-state), and `RequireQuorum` in [Besu §4.2](../README.md#42-qbft-headers-and-seals). The account proof in `ResolveSet` is walked as in `VerifyServiceState`, and an absent account is rejected. Sets are lists of distinct addresses, compared without regard to order.
 
+**Hiero built-in verifier.** In bundles, Hiero's built-in verifier accepts at most 32 hops, and rejects a header of `H` or a hop header that lists validators. When the peer is a Hiero ledger, a producer SHOULD keep within these limits.
+
 ## 7. Trust anchor changes
 
-**Contents.** The trust anchor's encoding is internal to the verifier contract. The scheme requires it to determine:
+**Contents.** The trust anchor's encoding is internal to the verifier; Hiero's built-in verifier uses the encoding of [§9.1](#91-configuration-proof). The scheme requires it to determine:
 
 | Content | Meaning |
 |---|---|
@@ -173,11 +192,12 @@ function verifyBundle(proof, anchor, ctx):
 | Code hash `codeHash` | The CLPR Service account's code hash; 0 disables the check |
 | `validatorContract`, `arraySlot` | Where the validator set is held |
 | `validatorCodeHash` | The validator contract's code hash |
+| Storage root `R` | The validator contract's storage root at block `A` |
 | Anchored block `A` | The block at which `T` was last confirmed |
 
 **Id.** The trust anchor id is `be(A, 8)`.
 
-**Changes.** When the set proven in the state of `H` differs from `T`, or the bundle carries at least one hop, the new anchor has `T` replaced by the set proven in the state of `H` and `A` by `number(H)`, with id `be(number(H), 8)`. The other contents do not change. Otherwise the new anchor and id are empty.
+**Changes.** When the set proven in the state of `H` differs from `T`, the bundle carries at least one hop, or the validator contract's storage root at `H` differs from `R`, the new anchor has `T` replaced by the set proven in the state of `H`, `A` by `number(H)` and `R` by the storage root at `H`, with id `be(number(H), 8)`. The other contents do not change. Otherwise the new anchor and id are empty.
 
 ## 8. Rejection conditions
 
@@ -187,10 +207,12 @@ A verifier MUST reject the bundle when:
 |---|
 | The trust anchor or the channel context is malformed. |
 | The bundle is shorter than 2 bytes, or is not an RLP list of 5 or 7 items. |
-| The header of `H` does not have 15 to 22 fields, or a hop header has fewer than 15 fields. |
+| The header of `H` or a hop header has fewer than 15 fields. |
 | Item 1 is not a list of exactly 3 items, or a hop is not a list of exactly 2 items. |
 | `trustedSet` holds an item that is not a non-zero 20-byte address, or more than 256 items, or its members are not exactly `T`. |
 | A hop's number is not greater than the previous hop's, or than `A` for the first hop. |
+| A hop proves the same set as the set it is checked against. |
+| The contract proof for `H` carries no storage entries, and the validator contract's storage root at `H` differs from the root at the last hop, or from `R` when there are no hops. |
 | The number of `H` is not greater than the last hop's, or than `A` when there are no hops. |
 | A hop header or the header of `H` fails `RequireQuorum` against the current set. |
 | A validator contract proof is not a byte string holding a 4-item list, names another contract or array slot, has an invalid or absent account, has more than 257 storage entries, proves a length of 0 or more than 256, a zero member or duplicate members, or a code hash other than `validatorCodeHash`. |
@@ -200,7 +222,9 @@ A verifier MUST reject the bundle when:
 
 ### 9.1 Configuration proof
 
-The configuration proof is an RLP list of 7 items. Items 0 to 3 are those of [qbft-header](qbft-header.md#91-configuration-proof).
+A configuration proof takes one of two forms: the RLP form, which verifier contracts for EVM ledgers accept, and the protobuf form, which Hiero's built-in verifier accepts.
+
+**RLP form.** The configuration proof is an RLP list of 7 items. Items 0 to 3 are those of [qbft-header](qbft-header.md#91-configuration-proof).
 
 | Index | Item | Encoding |
 |---|---|---|
@@ -220,9 +244,9 @@ function verifyConfig(config, channelId, manifestProof):
             (descriptor[0], descriptor[1], descriptor[2], descriptor[3], descriptor[4])
     if mode ≠ 1 then reject "unknown validator mode"
     header := items[6]
-    (V, validatorCodeHash) := ResolveSet(items[5], stateRoot(header), validatorContract, arraySlot)
+    (V, validatorCodeHash, R) := ResolveSet(items[5], stateRoot(header), validatorContract, arraySlot)
     RequireQuorum(header, V)
-    anchor := (V, codeHash, validatorContract, arraySlot, number(header), validatorCodeHash)
+    anchor := (V, codeHash, validatorContract, arraySlot, number(header), validatorCodeHash, R)
     anchorId := be(number(header), 8)
     manifest := ConfigurationTimeManifest(manifestProof, V, items[0])
     return (channelId ‖ items[0], items[1], items[0], items[2], items[3], anchor, anchorId, manifest)
@@ -233,6 +257,10 @@ The configuration proof establishes the initial validator set, proven from the v
 The configuration header SHOULD be a block whose state does not change the validator array. Its seals are checked against the set proven in its own state, so a header whose block changes the set is checked against the new set and can be rejected.
 
 A verifier MUST reject the configuration proof when it is empty, is not an RLP list of 7 items, has a header with fewer than 15 fields, has a throttles list of other than 5 or 7 items, has a descriptor that is not a 5-item list with mode 1, has a validator contract proof that fails `ResolveSet`, or when the header fails `RequireQuorum` against the proven set.
+
+**Protobuf form.** The configuration proof is the [qbft-header](qbft-header.md#91-configuration-proof) protobuf form with `contract_mode_validator_source` (field 6) present. `V` is the validator array proven from that field: `validator_contract_address` and `array_slot` name the contract and slot, and the account and storage proofs prove them under the header's `stateRoot`, as `ResolveSet` does. The header MUST list no validators, and MUST pass `RequireQuorum(header, V)`.
+
+The initial trust anchor is `RLP([0x01, RLP(V in ascending byte order), serviceAddress, codeHash, be(number(header), 8), validatorContract, arraySlot, validatorCodeHash, validatorStorageRoot])`, where `validatorStorageRoot` is the validator contract's proven storage root. Its id is `be(number(header), 8)`.
 
 ### 9.2 Manifest proof
 
