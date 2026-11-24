@@ -7,5 +7,6 @@ A CLIP proposes a change to the CLPR Protocol, with its reasoning and the record
 | CLIP | Title | Status | Base release | Target release |
 |---|---|---|---|---|
 | [0001](clip-0001.md) | CLPR Specification Governance and Organization | Draft (Living when adopted) | — | — |
+| [0002](clip-0002.md) | Permissioned Channels | Draft | v0.2 | unscheduled |
 
 Statuses: Draft, Review, Last Call, Accepted, Scheduled, Integrated, Final, Superseded, Withdrawn, Rejected, Deferred ([CLIP-0001](clip-0001.md), Section 6.4).
